@@ -1,155 +1,104 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tina 正音班</title>
-  <link rel="icon" href="turtle.jpg">
-
-  <style>
-    body {
-      font-family: 'Microsoft JhengHei', sans-serif;
-      background-color: #fdf6f0;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #ffb6b9;
-      padding: 20px;
-      text-align: center;
-      color: white;
-      font-size: 2em;
-      font-weight: bold;
-    }
-    nav {
-      display: flex;
-      justify-content: center;
-      background-color: #ffe0e0;
-      padding: 10px 0;
-    }
-    nav a {
-      margin: 0 15px;
-      text-decoration: none;
-      color: #333;
-      font-weight: bold;
-    }
-    nav a:hover {
-      color: #ff4c4c;
-    }
-    main {
-      padding: 20px;
-      max-width: 800px;
-      margin: auto;
-    }
-    h2 {
-      color: #ff4c4c;
-    }
-    .level-buttons {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .level-buttons button {
-      margin: 0 10px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      background-color: #ffb6b9;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .level-buttons button:hover {
-      background-color: #ff4c4c;
-    }
-    .tongue-twister {
-      background-color: #fff4f4;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .tongue-twister audio {
-      margin-top: 10px;
-      width: 100%;
-    }
-    footer {
-      text-align: center;
-      padding: 15px;
-      background-color: #ffb6b9;
-      color: white;
-      margin-top: 30px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tina 正音班 - 手機版</title>
+<style>
+body { font-family:'Microsoft JhengHei'; background:#fdf6f0; margin:0; padding:20px;}
+header { background:#ffb6b9; padding:20px; text-align:center; color:white; font-size:2em; font-weight:bold;}
+nav { display:flex; justify-content:center; flex-wrap:wrap; background:#ffe0e0; padding:10px 0;}
+nav a { margin:5px 15px; text-decoration:none; color:#333; font-weight:bold;}
+nav a:hover { color:#ff4c4c; }
+main { padding:20px; max-width:800px; margin:auto;}
+h2 { color:#ff4c4c; }
+.level-buttons { text-align:center; margin-bottom:20px;}
+.level-buttons button { margin:0 10px; padding:10px 20px; border:none; border-radius:5px; background:#ffb6b9; color:white; font-weight:bold; cursor:pointer;}
+.level-buttons button:hover { background:#ff4c4c; }
+.tongue-twister { background:#fff4f4; padding:15px; margin-bottom:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+.tongue-twister audio { margin-top:10px; width:100%; }
+footer { text-align:center; padding:15px; background:#ffb6b9; color:white; margin-top:30px;}
+@media(max-width:500px){ nav{flex-direction:column;} .level-buttons button{margin:5px 0; width:80%;}}
+</style>
 </head>
-
 <body>
 
 <header>Tina 正音班</header>
-
 <nav>
-  <a href="#home">首頁</a>
-  <a href="#tongue-twisters">繞口令</a>
-  <a href="#recordings">Tina 錄音</a>
+    <a href="#home">首頁</a>
+    <a href="#tongue-twisters">繞口令</a>
+    <a href="#recordings">錄音上傳</a>
 </nav>
 
 <main id="home">
-  <h2>歡迎來到 Tina 正音班！</h2>
-  <p>跟 Tina 一起練習發音，挑戰各種有趣的繞口令。</p>
+    <h2>歡迎來到 Tina 正音班！</h2>
+    <p>跟 Tina 一起練習發音，挑戰有趣的繞口令，讓你的口齒更清晰流暢！</p>
 </main>
 
 <main id="tongue-twisters">
-  <h2>繞口令挑戰</h2>
-
-  <div class="level-buttons">
-    <button onclick="showLevel('easy')">簡單</button>
-    <button onclick="showLevel('medium')">中等</button>
-    <button onclick="showLevel('hard')">困難</button>
-  </div>
-
-  <div id="twister-container"></div>
+    <h2>繞口令挑戰</h2>
+    <div class="level-buttons">
+        <button onclick="showLevel('easy')">簡單</button>
+        <button onclick="showLevel('medium')">中等</button>
+        <button onclick="showLevel('hard')">困難</button>
+    </div>
+    <div id="twister-container"></div>
 </main>
 
 <main id="recordings">
-  <h2>Tina 錄音示範</h2>
+    <h2>上傳 Tina 的示範錄音或自己的錄音</h2>
+    <div class="tongue-twister">
+        <p>選擇錄音檔並立即播放：</p>
+        <input type="file" id="audioUpload" accept="audio/*" multiple>
+        <div id="audioPlayers"></div>
+    </div>
 </main>
 
 <footer>© 2025 Tina 正音班</footer>
 
 <script>
+// 繞口令資料，暫時只放文字
 const tongueTwisters = {
-  easy: [
-    {
-      text: "吃葡萄不吐葡萄皮，不吃葡萄倒吐葡萄皮。",
-      audio: "audio/grape.mp3"
-    }
-  ],
-  medium: [],
-  hard: []
+    easy: [
+        { text: "吃葡萄不吐葡萄皮，不吃葡萄倒吐葡萄皮。" }
+    ],
+    medium: [
+        { text: "東市十四隻獅子，西市十四濕柿子，南市十四石獅子，北市十四隻柿子。" }
+    ],
+    hard: []
 };
 
-function showLevel(level) {
-  const container = document.getElementById("twister-container");
-  container.innerHTML = "";
-
-  if (tongueTwisters[level].length === 0) {
-    container.innerHTML = "<p>此等級目前尚無繞口令</p>";
-    return;
-  }
-
-  tongueTwisters[level].forEach(tt => {
-    const div = document.createElement("div");
-    div.className = "tongue-twister";
-    div.innerHTML = `
-      <p>${tt.text}</p>
-      <audio controls>
-        <source src="${tt.audio}" type="audio/mpeg">
-      </audio>
-    `;
-    container.appendChild(div);
-  });
+// 顯示繞口令
+function showLevel(level){
+    const container = document.getElementById('twister-container');
+    container.innerHTML='';
+    if(tongueTwisters[level].length===0){
+        container.innerHTML='<p>此等級目前尚無繞口令，請新增！</p>';
+        return;
+    }
+    tongueTwisters[level].forEach(tt=>{
+        const div = document.createElement('div');
+        div.className='tongue-twister';
+        div.innerHTML=`<p>${tt.text}</p>`;
+        container.appendChild(div);
+    });
 }
+showLevel('easy');
 
-showLevel("easy");
+// 手機上傳播放多檔音訊（可當 Tina 示範或自己的錄音）
+const audioInput = document.getElementById('audioUpload');
+const audioPlayers = document.getElementById('audioPlayers');
+
+audioInput.addEventListener('change', function(){
+    audioPlayers.innerHTML='';
+    Array.from(this.files).forEach(file=>{
+        const url = URL.createObjectURL(file);
+        const audio = document.createElement('audio');
+        audio.controls = true;
+        audio.src = url;
+        audioPlayers.appendChild(audio);
+    });
+});
 </script>
 
 </body>
