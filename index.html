@@ -1,140 +1,155 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset = "utf-8">
-    <title>Tina正音班</title>
-    <link rel="icon" href="turtle.jpg">
-  </head>
-  <body>
-      <!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tina 正音班</title>
-<style>
-    body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #fdf6f0; margin: 0; padding: 0; }
-    header { background-color: #ffb6b9; padding: 20px; text-align: center; color: white; font-size: 2em; font-weight: bold; }
-    nav { display: flex; justify-content: center; background-color: #ffe0e0; padding: 10px 0; }
-    nav a { margin: 0 15px; text-decoration: none; color: #333; font-weight: bold; }
-    nav a:hover { color: #ff4c4c; }
-    main { padding: 20px; max-width: 800px; margin: auto; }
-    h2 { color: #ff4c4c; }
-    .level-buttons { text-align: center; margin-bottom: 20px; }
-    .level-buttons button { margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; background-color: #ffb6b9; color: white; font-weight: bold; cursor: pointer; }
-    .level-buttons button:hover { background-color: #ff4c4c; }
-    .tongue-twister { background-color: #fff4f4; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .tongue-twister audio { margin-top: 10px; width: 100%; }
-    footer { text-align: center; padding: 15px; background-color: #ffb6b9; color: white; margin-top: 30px; }
-</style>
-</head>
-<body>
-
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tina 正音班</title>
-<style>
-    body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #fdf6f0; margin: 0; padding: 0; }
-    header { background-color: #ffb6b9; padding: 20px; text-align: center; color: white; font-size: 2em; font-weight: bold; }
-    nav { display: flex; justify-content: center; background-color: #ffe0e0; padding: 10px 0; }
-    nav a { margin: 0 15px; text-decoration: none; color: #333; font-weight: bold; }
-    nav a:hover { color: #ff4c4c; }
-    main { padding: 20px; max-width: 800px; margin: auto; }
-    h2 { color: #ff4c4c; }
-    .level-buttons { text-align: center; margin-bottom: 20px; }
-    .level-buttons button { margin: 0 10px; padding: 10px 20px; border: none; border-radius: 5px; background-color: #ffb6b9; color: white; font-weight: bold; cursor: pointer; }
-    .level-buttons button:hover { background-color: #ff4c4c; }
-    .tongue-twister { background-color: #fff4f4; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .tongue-twister audio { margin-top: 10px; width: 100%; }
-    footer { text-align: center; padding: 15px; background-color: #ffb6b9; color: white; margin-top: 30px; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tina 正音班</title>
+  <link rel="icon" href="turtle.jpg">
+
+  <style>
+    body {
+      font-family: 'Microsoft JhengHei', sans-serif;
+      background-color: #fdf6f0;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #ffb6b9;
+      padding: 20px;
+      text-align: center;
+      color: white;
+      font-size: 2em;
+      font-weight: bold;
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      background-color: #ffe0e0;
+      padding: 10px 0;
+    }
+    nav a {
+      margin: 0 15px;
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+    }
+    nav a:hover {
+      color: #ff4c4c;
+    }
+    main {
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    h2 {
+      color: #ff4c4c;
+    }
+    .level-buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .level-buttons button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #ffb6b9;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .level-buttons button:hover {
+      background-color: #ff4c4c;
+    }
+    .tongue-twister {
+      background-color: #fff4f4;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .tongue-twister audio {
+      margin-top: 10px;
+      width: 100%;
+    }
+    footer {
+      text-align: center;
+      padding: 15px;
+      background-color: #ffb6b9;
+      color: white;
+      margin-top: 30px;
+    }
+  </style>
 </head>
+
 <body>
 
 <header>Tina 正音班</header>
+
 <nav>
-    <a href="#home">首頁</a>
-    <a href="#tongue-twisters">繞口令</a>
-    <a href="#recordings">Tina 錄音</a>
+  <a href="#home">首頁</a>
+  <a href="#tongue-twisters">繞口令</a>
+  <a href="#recordings">Tina 錄音</a>
 </nav>
 
 <main id="home">
-    <h2>歡迎來到 Tina 正音班！</h2>
-    <p>跟 Tina 一起練習發音，挑戰各種有趣的繞口令，讓你的口齒更清晰、更流暢！</p>
+  <h2>歡迎來到 Tina 正音班！</h2>
+  <p>跟 Tina 一起練習發音，挑戰各種有趣的繞口令。</p>
 </main>
 
 <main id="tongue-twisters">
-    <h2>繞口令挑戰</h2>
+  <h2>繞口令挑戰</h2>
 
-    <div class="level-buttons">
-        <button onclick="showLevel('easy')">簡單</button>
-        <button onclick="showLevel('medium')">中等</button>
-        <button onclick="showLevel('hard')">困難</button>
-    </div>
+  <div class="level-buttons">
+    <button onclick="showLevel('easy')">簡單</button>
+    <button onclick="showLevel('medium')">中等</button>
+    <button onclick="showLevel('hard')">困難</button>
+  </div>
 
-    <div id="twister-container">
-        <!-- 繞口令會由 JS 動態顯示 -->
-    </div>
+  <div id="twister-container"></div>
 </main>
 
 <main id="recordings">
-    <h2>Tina 錄音示範</h2>
-    <div class="tongue-twister">
-        <p>日落時的發音練習</p>
-        <audio controls>
-            <source src="audio/sunset.mp3" type="audio/mpeg">
-            你的瀏覽器不支援播放音訊。
-        </audio>
-    </div>
-    <div class="tongue-twister">
-        <p>快樂的朗讀練習</p>
-        <audio controls>
-            <source src="audio/happy-reading.mp3" type="audio/mpeg">
-            你的瀏覽器不支援播放音訊。
-        </audio>
-    </div>
+  <h2>Tina 錄音示範</h2>
 </main>
 
 <footer>© 2025 Tina 正音班</footer>
 
 <script>
-// 繞口令資料
 const tongueTwisters = {
-    easy: [
-        { 
-            text: "吃葡萄不吐葡萄皮，不吃葡萄倒吐葡萄皮。", 
-            audio: "audio/grape.mp3" // 請把 Tina 的錄音檔放在 audio 資料夾裡
-        }
-    ],
-    medium: [],
-    hard: []
+  easy: [
+    {
+      text: "吃葡萄不吐葡萄皮，不吃葡萄倒吐葡萄皮。",
+      audio: "audio/grape.mp3"
+    }
+  ],
+  medium: [],
+  hard: []
 };
 
-// 顯示指定等級的繞口令
 function showLevel(level) {
-    const container = document.getElementById('twister-container');
-    container.innerHTML = ''; // 清空
-    if (tongueTwisters[level].length === 0) {
-        container.innerHTML = '<p>此等級目前尚無繞口令，請新增！</p>';
-        return;
-    }
-    tongueTwisters[level].forEach(tt => {
-        const div = document.createElement('div');
-        div.className = 'tongue-twister';
-        div.innerHTML = `<p>${tt.text}</p>
-                         <audio controls>
-                            <source src="${tt.audio}" type="audio/mpeg">
-                            你的瀏覽器不支援播放音訊。
-                         </audio>`;
-        container.appendChild(div);
-    });
+  const container = document.getElementById("twister-container");
+  container.innerHTML = "";
+
+  if (tongueTwisters[level].length === 0) {
+    container.innerHTML = "<p>此等級目前尚無繞口令</p>";
+    return;
+  }
+
+  tongueTwisters[level].forEach(tt => {
+    const div = document.createElement("div");
+    div.className = "tongue-twister";
+    div.innerHTML = `
+      <p>${tt.text}</p>
+      <audio controls>
+        <source src="${tt.audio}" type="audio/mpeg">
+      </audio>
+    `;
+    container.appendChild(div);
+  });
 }
 
-// 預設顯示簡單等級
-showLevel('easy');
+showLevel("easy");
 </script>
 
 </body>
