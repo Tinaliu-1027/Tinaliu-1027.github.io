@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tina 正音班｜永久示範音版</title>
+<title>Tina 正音班｜手機錄音示範</title>
 <style>
-body{font-family:"Microsoft JhengHei",sans-serif;background:#fdf6f0;margin:0}
+body{font-family:"Microsoft JhengHei",sans-serif;background:#fdf6f0;margin:0;padding:0}
 header{background:#ffb6b9;color:#fff;padding:20px;text-align:center;font-size:26px;font-weight:bold}
 main{max-width:900px;margin:auto;padding:20px}
 h2{color:#ff4c4c}
@@ -13,14 +13,12 @@ h2{color:#ff4c4c}
 .card{background:#fff;padding:15px;border-radius:10px;margin-bottom:20px;position:relative}
 audio{width:100%;margin-top:8px}
 .lock{background:#ffe0e0;padding:12px;border-radius:10px;margin-top:30px}
-.computer-only{background:#fff4f4;padding:10px;border-radius:8px;margin-top:10px}
-@media(max-width:768px){.computer-only{display:none}}
 footer{text-align:center;padding:15px;background:#ffb6b9;color:white}
 </style>
 </head>
 <body>
 
-<header>🎤 Tina 正音班｜永久示範音</header>
+<header>🎤 Tina 正音班｜手機錄音示範</header>
 <main>
 
 <h2>分級挑戰</h2>
@@ -31,71 +29,58 @@ footer{text-align:center;padding:15px;background:#ffb6b9;color:white}
 </div>
 <div id="list"></div>
 
-<h2>🔒 Tina 老師專用（新增繞口令＋示範）</h2>
+<h2>🔒 Tina 上傳示範音</h2>
 <div class="lock">
 <input type="password" id="pwd" placeholder="輸入密碼">
 <button onclick="unlock()">解鎖</button>
 <div id="teacher" style="display:none">
+<p>GitHub Token：</p>
+<input type="text" id="token" placeholder="輸入 GitHub Token" style="width:100%">
 <p>難度：
 <select id="newLevel">
 <option value="easy">簡單</option>
 <option value="medium">中等</option>
 <option value="hard">困難</option>
 </select></p>
+
 <textarea id="newText" placeholder="輸入繞口令" rows="3" style="width:100%"></textarea>
-<p>示範錄音：</p>
-<input type="file" accept="audio/*" id="newAudio">
+
+<p>手機錄音：</p>
+<button onclick="startRec()">🎙️ 開始錄音</button>
+<button onclick="stopRec()">⏹ 停止錄音</button>
 <br><br>
-<button onclick="addTwister()">➕ 新增</button>
+<a id="uploadLink" style="display:none"></a>
 </div>
 </div>
 
 </main>
-
 <footer>© Tina 正音班</footer>
 
 <script>
-// 資料結構
+// 分級資料
 let data={easy:[],medium:[],hard:[]};
 let current="easy";
 
-// 讀取 localStorage
-function loadData(){
-  const d = JSON.parse(localStorage.getItem("tinaData")||'{}');
-  if(d.easy) data.easy=d.easy;
-  if(d.medium) data.medium=d.medium;
-  if(d.hard) data.hard=d.hard;
-}
-
-// 儲存 localStorage
-function saveData(){
-  localStorage.setItem("tinaData", JSON.stringify(data));
-}
-
-// 顯示指定分級
+// 顯示繞口令
 function show(level){
   current=level;
   const list=document.getElementById("list");
   list.innerHTML="";
-  data[level].forEach((t,i)=>{
+  data[level].forEach(t=>{
     list.innerHTML+=`
-    <div class="card">
-      <p>${t.text}</p>
-      <p>🎧 Tina 示範</p>
-      ${t.demo?`<audio controls src="${t.demo}"></audio>
-      <a href="${t.demo}" download="${t.text}.mp3">⬇️ 下載示範音</a>`:`<p>（尚未上傳示範）</p>`}
-      <p>🎤 學員錄音</p>
-      <input type="file" accept="audio/*" onchange="playStudent(event,this)">
-      <div class="computer-only">
-        <button onclick="startRec(${i})">🎙️ 錄音</button>
-        <button onclick="stopRec()">⏹ 停止</button>
-        <audio id="pb-${i}" controls></audio>
+      <div class="card">
+        <p>${t.text}</p>
+        <p>🎧 Tina 示範</p>
+        ${t.demo?`<audio controls src="${t.demo}"></audio>
+        <a href="${t.demo}" download="${t.text}.mp3">⬇️ 下載示範音</a>`:`<p>尚無示範音</p>`}
+        <p>🎤 學員錄音</p>
+        <input type="file" accept="audio/*" onchange="playStudent(event,this)">
       </div>
-    </div>`;
+    `;
   });
 }
 
-// 學員播放
+// 學員播放錄音
 function playStudent(e,input){
   const a=document.createElement("audio");
   a.controls=true;
@@ -110,44 +95,72 @@ function unlock(){
   } else alert("密碼錯誤");
 }
 
-// Tina 新增題目
-function addTwister(){
-  const lv=document.getElementById("newLevel").value;
-  const text=document.getElementById("newText").value.trim();
-  const file=document.getElementById("newAudio").files[0];
-  if(!text||!file){alert("文字與錄音都要");return;}
-
-  const reader = new FileReader();
-  reader.onload = function(e){
-    const base64 = e.target.result; // 將檔案轉成 base64
-    data[lv].push({text:text,demo:base64});
-    saveData();
-    show(lv);
-  };
-  reader.readAsDataURL(file);
-
-  document.getElementById("newText").value="";
-  document.getElementById("newAudio").value="";
-}
-
-// 電腦錄音
-let rec,chunks=[],idx=0;
-async function startRec(i){
-  idx=i;
-  const s=await navigator.mediaDevices.getUserMedia({audio:true});
-  rec=new MediaRecorder(s);
+// Tina 手機錄音
+let rec,chunks=[];
+async function startRec(){
+  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  rec = new MediaRecorder(stream);
   chunks=[];
-  rec.ondataavailable=e=>chunks.push(e.data);
-  rec.onstop=()=>{
-    document.getElementById(`pb-${idx}`).src=URL.createObjectURL(new Blob(chunks));
-  };
+  rec.ondataavailable = e => chunks.push(e.data);
   rec.start();
+  alert("錄音開始！");
 }
-function stopRec(){rec.stop();}
 
-// 初始化
-loadData();
-show("easy");
+// 停止錄音並上傳 GitHub
+async function stopRec(){
+  rec.onstop = async ()=>{
+    const blob = new Blob(chunks,{type:'audio/mp3'});
+    const file = new File([blob],'demo.mp3',{type:'audio/mp3'});
+
+    const token = document.getElementById("token").value.trim();
+    if(!token){alert("請先輸入 GitHub Token");return;}
+
+    const repo = "USERNAME/REPO"; // ⚠️ 改成你的 GitHub Repo
+    const path = "demo"; // 存放路徑
+
+    try{
+      const url = await uploadToGitHub(file, path, token, repo);
+      alert("上傳成功！");
+      const lv=document.getElementById("newLevel").value;
+      const text=document.getElementById("newText").value.trim();
+      data[lv].push({text:text,demo:url});
+      show(lv);
+    }catch(e){
+      alert("上傳失敗："+e.message);
+    }
+  }
+  rec.stop();
+}
+
+// 將 Blob 轉 Base64
+function blobToBase64(blob){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onloadend=()=>resolve(reader.result.split(',')[1]);
+    reader.onerror=reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// 上傳到 GitHub
+async function uploadToGitHub(file,path,token,repo){
+  const base64 = await blobToBase64(file);
+  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}/${file.name}`,{
+    method:"PUT",
+    headers:{
+      "Authorization":"token "+token,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      message:"新增 Tina 示範音",
+      content:base64
+    })
+  });
+  const data = await res.json();
+  if(data.content && data.content.download_url) return data.content.download_url;
+  else throw new Error("上傳失敗");
+}
+
 </script>
 
 </body>
