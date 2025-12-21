@@ -3,165 +3,236 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tina 正音班｜手機錄音示範</title>
+<title>裝飾聖誕樹</title>
 <style>
-body{font-family:"Microsoft JhengHei",sans-serif;background:#fdf6f0;margin:0;padding:0}
-header{background:#ffb6b9;color:#fff;padding:20px;text-align:center;font-size:26px;font-weight:bold}
-main{max-width:900px;margin:auto;padding:20px}
-h2{color:#ff4c4c}
-.levels button{margin:5px;padding:10px 18px;border:none;background:#ffb6b9;color:#fff;border-radius:6px}
-.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:20px;position:relative}
-audio{width:100%;margin-top:8px}
-.lock{background:#ffe0e0;padding:12px;border-radius:10px;margin-top:30px}
-footer{text-align:center;padding:15px;background:#ffb6b9;color:white}
+  body {
+    margin: 0;
+    font-family: sans-serif;
+    background: url('https://i.imgur.com/3yHg9HJ.jpg') no-repeat center center;
+    background-size: cover;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    color: white;
+  }
+  .controls {
+    background: rgba(0,0,0,0.6);
+    padding: 20px;
+    margin: 20px;
+    border-radius: 10px;
+    z-index: 10;
+    position: relative;
+  }
+  .controls label {
+    display: block;
+    margin-top: 10px;
+  }
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: grab;
+  }
 </style>
 </head>
 <body>
-
-<header>🎤 Tina 正音班｜手機錄音示範</header>
-<main>
-
-<h2>分級挑戰</h2>
-<div class="levels">
-  <button onclick="show('easy')">簡單</button>
-  <button onclick="show('medium')">中等</button>
-  <button onclick="show('hard')">困難</button>
-</div>
-<div id="list"></div>
-
-<h2>🔒 Tina 上傳示範音</h2>
-<div class="lock">
-<input type="password" id="pwd" placeholder="輸入密碼">
-<button onclick="unlock()">解鎖</button>
-<div id="teacher" style="display:none">
-<p>GitHub Token：</p>
-<input type="text" id="token" placeholder="輸入 GitHub Token" style="width:100%">
-<p>難度：
-<select id="newLevel">
-<option value="easy">簡單</option>
-<option value="medium">中等</option>
-<option value="hard">困難</option>
-</select></p>
-
-<textarea id="newText" placeholder="輸入繞口令" rows="3" style="width:100%"></textarea>
-
-<p>手機錄音：</p>
-<button onclick="startRec()">🎙️ 開始錄音</button>
-<button onclick="stopRec()">⏹ 停止錄音</button>
-<br><br>
-<a id="uploadLink" style="display:none"></a>
-</div>
+<div class="controls">
+  <h2>裝飾聖誕樹</h2>
+  <label>樹幹顏色: <input type="color" id="trunkColor" value="#8B4513"></label>
+  <label>樹葉顏色: <input type="color" id="leafColor" value="#006400"></label>
+  <label>小球顏色: <input type="color" id="ballColor" value="#FF0000"></label>
+  <label>彩帶顏色: <input type="color" id="ribbonColor" value="#FFD700"></label>
+  <label>星星顏色: <input type="color" id="starColor" value="#FFFF00"></label>
+  <label>禮物顏色: <input type="color" id="giftColor" value="#FF69B4"></label>
+  <label>禮物數量: <input type="number" id="giftCount" value="3" min="0" max="10"></label>
 </div>
 
-</main>
-<footer>© Tina 正音班</footer>
+<canvas id="treeCanvas" width="600" height="600"></canvas>
+<canvas id="snowCanvas" width="600" height="600"></canvas>
 
 <script>
-// 分級資料
-let data={easy:[],medium:[],hard:[]};
-let current="easy";
+const canvas = document.getElementById('treeCanvas');
+const ctx = canvas.getContext('2d');
+const snowCanvas = document.getElementById('snowCanvas');
+const snowCtx = snowCanvas.getContext('2d');
 
-// 顯示繞口令
-function show(level){
-  current=level;
-  const list=document.getElementById("list");
-  list.innerHTML="";
-  data[level].forEach(t=>{
-    list.innerHTML+=`
-      <div class="card">
-        <p>${t.text}</p>
-        <p>🎧 Tina 示範</p>
-        ${t.demo?`<audio controls src="${t.demo}"></audio>
-        <a href="${t.demo}" download="${t.text}.mp3">⬇️ 下載示範音</a>`:`<p>尚無示範音</p>`}
-        <p>🎤 學員錄音</p>
-        <input type="file" accept="audio/*" onchange="playStudent(event,this)">
-      </div>
-    `;
+const trunkColorInput = document.getElementById('trunkColor');
+const leafColorInput = document.getElementById('leafColor');
+const ballColorInput = document.getElementById('ballColor');
+const ribbonColorInput = document.getElementById('ribbonColor');
+const starColorInput = document.getElementById('starColor');
+const giftColorInput = document.getElementById('giftColor');
+const giftCountInput = document.getElementById('giftCount');
+
+let balls = [
+  {x:260,y:180,r:8},{x:340,y:180,r:8},{x:280,y:240,r:8},{x:320,y:240,r:8},{x:300,y:300,r:8}
+];
+
+let gifts = [];
+function createGifts() {
+  gifts = [];
+  const count = parseInt(giftCountInput.value);
+  for(let i=0;i<count;i++){
+    gifts.push({x:220+i*50, y:500, w:40, h:40});
+  }
+}
+createGifts();
+
+// 星星閃爍參數
+let starBrightness = 1;
+let starDirection = 0.02;
+
+// 雪花
+const snowflakes = [];
+for(let i=0;i<100;i++){
+  snowflakes.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    r: Math.random()*3+1,
+    speed: Math.random()*1+0.5
   });
 }
 
-// 學員播放錄音
-function playStudent(e,input){
-  const a=document.createElement("audio");
-  a.controls=true;
-  a.src=URL.createObjectURL(e.target.files[0]);
-  input.after(a);
+// 調整顏色亮度
+function adjustBrightness(hexColor, factor){
+  const r = Math.min(255, Math.max(0, parseInt(hexColor.substr(1,2),16)*factor));
+  const g = Math.min(255, Math.max(0, parseInt(hexColor.substr(3,2),16)*factor));
+  const b = Math.min(255, Math.max(0, parseInt(hexColor.substr(5,2),16)*factor));
+  return `rgb(${r},${g},${b})`;
 }
 
-// Tina 密碼解鎖
-function unlock(){
-  if(document.getElementById("pwd").value==="981027"){
-    document.getElementById("teacher").style.display="block";
-  } else alert("密碼錯誤");
+function drawTree() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 樹幹
+  ctx.fillStyle = trunkColorInput.value;
+  ctx.fillRect(280, 400, 40, 100);
+
+  // 樹葉
+  ctx.fillStyle = leafColorInput.value;
+  const layers = [
+    {top:100,left:200,right:400},
+    {top:150,left:220,right:380},
+    {top:200,left:240,right:360}
+  ];
+  layers.forEach(l=>{
+    ctx.beginPath();
+    ctx.moveTo(300, l.top);
+    ctx.lineTo(l.left, 400);
+    ctx.lineTo(l.right, 400);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // 星星 (閃爍)
+  starBrightness += starDirection;
+  if(starBrightness >=1.5 || starBrightness <=0.5) starDirection *= -1;
+  ctx.fillStyle = adjustBrightness(starColorInput.value, starBrightness);
+  ctx.beginPath();
+  ctx.moveTo(300, 80);
+  for(let i=0;i<5;i++){
+    ctx.lineTo(300 + 10*Math.cos((18 + i*72)*Math.PI/180), 80 - 10*Math.sin((18 + i*72)*Math.PI/180));
+    ctx.lineTo(300 + 5*Math.cos((54 + i*72)*Math.PI/180), 80 - 5*Math.sin((54 + i*72)*Math.PI/180));
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  // 彩帶
+  ctx.strokeStyle = ribbonColorInput.value;
+  ctx.lineWidth = 4;
+  for(let y=150;y<=400;y+=50){
+    ctx.beginPath();
+    ctx.moveTo(240, y);
+    ctx.quadraticCurveTo(300, y-20, 360, y);
+    ctx.stroke();
+  }
+
+  // 小球
+  ctx.fillStyle = ballColorInput.value;
+  balls.forEach(b=>{
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // 禮物
+  ctx.fillStyle = giftColorInput.value;
+  gifts.forEach(g=>{
+    ctx.fillRect(g.x, g.y, g.w, g.h);
+  });
 }
 
-// Tina 手機錄音
-let rec,chunks=[];
-async function startRec(){
-  const stream = await navigator.mediaDevices.getUserMedia({audio:true});
-  rec = new MediaRecorder(stream);
-  chunks=[];
-  rec.ondataavailable = e => chunks.push(e.data);
-  rec.start();
-  alert("錄音開始！");
+// 雪花動畫
+function drawSnow(){
+  snowCtx.clearRect(0,0,snowCanvas.width,snowCanvas.height);
+  snowCtx.fillStyle = "white";
+  snowflakes.forEach(s=>{
+    snowCtx.beginPath();
+    snowCtx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    snowCtx.fill();
+    s.y += s.speed;
+    if(s.y>snowCanvas.height) s.y=0;
+  });
 }
 
-// 停止錄音並上傳 GitHub
-async function stopRec(){
-  rec.onstop = async ()=>{
-    const blob = new Blob(chunks,{type:'audio/mp3'});
-    const file = new File([blob],'demo.mp3',{type:'audio/mp3'});
+// 拖動功能
+let dragging = null;
+let offsetX, offsetY;
 
-    const token = document.getElementById("token").value.trim();
-    if(!token){alert("請先輸入 GitHub Token");return;}
+canvas.addEventListener('mousedown', (e)=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
 
-    const repo = "Tinaliu-1027/TinaDemoToken"; // ⚠️ 改成你的 GitHub Repo
-    const path = "demo"; // 存放路徑
-
-    try{
-      const url = await uploadToGitHub(file, path, token, repo);
-      alert("上傳成功！");
-      const lv=document.getElementById("newLevel").value;
-      const text=document.getElementById("newText").value.trim();
-      data[lv].push({text:text,demo:url});
-      show(lv);
-    }catch(e){
-      alert("上傳失敗："+e.message);
+  for(let i=balls.length-1;i>=0;i--){
+    const b = balls[i];
+    if(Math.hypot(mx-b.x,my-b.y) < b.r){
+      dragging = b;
+      offsetX = mx - b.x;
+      offsetY = my - b.y;
+      canvas.style.cursor = 'grabbing';
+      return;
     }
   }
-  rec.stop();
-}
+  for(let i=gifts.length-1;i>=0;i--){
+    const g = gifts[i];
+    if(mx >= g.x && mx <= g.x+g.w && my >= g.y && my <= g.y+g.h){
+      dragging = g;
+      offsetX = mx - g.x;
+      offsetY = my - g.y;
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+  }
+});
 
-// 將 Blob 轉 Base64
-function blobToBase64(blob){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onloadend=()=>resolve(reader.result.split(',')[1]);
-    reader.onerror=reject;
-    reader.readAsDataURL(blob);
+canvas.addEventListener('mousemove', (e)=>{
+  if(dragging){
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    if(dragging.r) dragging.x = mx - offsetX;
+    else dragging.x = mx - offsetX, dragging.y = my - offsetY;
+  }
+});
+
+canvas.addEventListener('mouseup', ()=>{ dragging=null; canvas.style.cursor='grab'; });
+canvas.addEventListener('mouseleave', ()=>{ dragging=null; canvas.style.cursor='grab'; });
+
+// 監聽顏色與數量變化
+[trunkColorInput, leafColorInput, ballColorInput, ribbonColorInput, starColorInput, giftColorInput, giftCountInput].forEach(input=>{
+  input.addEventListener('input', ()=>{
+    if(input===giftCountInput) createGifts();
   });
-}
+});
 
-// 上傳到 GitHub
-async function uploadToGitHub(file,path,token,repo){
-  const base64 = await blobToBase64(file);
-  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path}/${file.name}`,{
-    method:"PUT",
-    headers:{
-      "Authorization":"token "+token,
-      "Content-Type":"application/json"
-    },
-    body:JSON.stringify({
-      message:"新增 Tina 示範音",
-      content:base64
-    })
-  });
-  const data = await res.json();
-  if(data.content && data.content.download_url) return data.content.download_url;
-  else throw new Error("上傳失敗");
+// 主動畫迴圈
+function animate(){
+  drawTree();
+  drawSnow();
+  requestAnimationFrame(animate);
 }
-
+animate();
 </script>
-
 </body>
 </html>
