@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tina 正音班｜闖關版</title>
+<title>Tina 正音班｜永久示範音版</title>
 <style>
 body{font-family:"Microsoft JhengHei",sans-serif;background:#fdf6f0;margin:0}
 header{background:#ffb6b9;color:#fff;padding:20px;text-align:center;font-size:26px;font-weight:bold}
@@ -15,13 +15,12 @@ audio{width:100%;margin-top:8px}
 .lock{background:#ffe0e0;padding:12px;border-radius:10px;margin-top:30px}
 .computer-only{background:#fff4f4;padding:10px;border-radius:8px;margin-top:10px}
 @media(max-width:768px){.computer-only{display:none}}
-.progress{position:absolute;top:10px;right:10px;font-weight:bold;color:#ff4c4c}
 footer{text-align:center;padding:15px;background:#ffb6b9;color:white}
 </style>
 </head>
-
 <body>
-<header>🎤 Tina 正音班｜闖關版</header>
+
+<header>🎤 Tina 正音班｜永久示範音</header>
 <main>
 
 <h2>分級挑戰</h2>
@@ -30,7 +29,6 @@ footer{text-align:center;padding:15px;background:#ffb6b9;color:white}
   <button onclick="show('medium')">中等</button>
   <button onclick="show('hard')">困難</button>
 </div>
-<div id="progressArea"></div>
 <div id="list"></div>
 
 <h2>🔒 Tina 老師專用（新增繞口令＋示範）</h2>
@@ -51,43 +49,41 @@ footer{text-align:center;padding:15px;background:#ffb6b9;color:white}
 <button onclick="addTwister()">➕ 新增</button>
 </div>
 </div>
+
 </main>
 
 <footer>© Tina 正音班</footer>
 
 <script>
-/* ===== 資料 ===== */
-const data={easy:[],medium:[],hard:[]};
+// 資料結構
+let data={easy:[],medium:[],hard:[]};
 let current="easy";
 
-/* ===== 進度讀取 ===== */
-function loadProgress(){
-  const p=JSON.parse(localStorage.getItem("progress")||'{}');
-  return p;
-}
-function saveProgress(prog){
-  localStorage.setItem("progress",JSON.stringify(prog));
+// 讀取 localStorage
+function loadData(){
+  const d = JSON.parse(localStorage.getItem("tinaData")||'{}');
+  if(d.easy) data.easy=d.easy;
+  if(d.medium) data.medium=d.medium;
+  if(d.hard) data.hard=d.hard;
 }
 
-/* ===== 顯示 ===== */
+// 儲存 localStorage
+function saveData(){
+  localStorage.setItem("tinaData", JSON.stringify(data));
+}
+
+// 顯示指定分級
 function show(level){
   current=level;
   const list=document.getElementById("list");
   list.innerHTML="";
-  const progressArea=document.getElementById("progressArea");
-  const prog=loadProgress();
-  let done=(prog[level]||[]).length;
-  let total=data[level].length;
-  progressArea.innerText=`${level}進度: ${done}/${total} 完成`;
-
   data[level].forEach((t,i)=>{
-    const isDone=(prog[level]||[]).includes(i);
     list.innerHTML+=`
     <div class="card">
-      <span class="progress">${isDone?'✔ 完成':''}</span>
       <p>${t.text}</p>
       <p>🎧 Tina 示範</p>
-      ${t.demo?`<audio controls src="${t.demo}"></audio>`:`<p>（尚未上傳示範）</p>`}
+      ${t.demo?`<audio controls src="${t.demo}"></audio>
+      <a href="${t.demo}" download="${t.text}.mp3">⬇️ 下載示範音</a>`:`<p>（尚未上傳示範）</p>`}
       <p>🎤 學員錄音</p>
       <input type="file" accept="audio/*" onchange="playStudent(event,this)">
       <div class="computer-only">
@@ -95,44 +91,11 @@ function show(level){
         <button onclick="stopRec()">⏹ 停止</button>
         <audio id="pb-${i}" controls></audio>
       </div>
-      <p><input type="checkbox" onchange="toggleDone(${i},this)" ${isDone?'checked':''}> 已完成</p>
     </div>`;
   });
 }
 
-/* ===== 勾選功能 ===== */
-function toggleDone(i,chk){
-  const prog=loadProgress();
-  if(!prog[current]) prog[current]=[];
-  if(chk.checked){
-    if(!prog[current].includes(i)) prog[current].push(i);
-  } else {
-    prog[current]=prog[current].filter(x=>x!==i);
-  }
-  saveProgress(prog);
-  show(current);
-}
-
-/* ===== Tina 解鎖 ===== */
-function unlock(){
-  if(document.getElementById("pwd").value==="981027"){
-    document.getElementById("teacher").style.display="block";
-  } else alert("密碼錯誤");
-}
-
-/* ===== Tina 新增題目 ===== */
-function addTwister(){
-  const lv=document.getElementById("newLevel").value;
-  const text=document.getElementById("newText").value.trim();
-  const file=document.getElementById("newAudio").files[0];
-  if(!text||!file){alert("文字與錄音都要");return;}
-  data[lv].push({text:text,demo:URL.createObjectURL(file)});
-  document.getElementById("newText").value="";
-  document.getElementById("newAudio").value="";
-  show(lv);
-}
-
-/* ===== 學員播放 ===== */
+// 學員播放
 function playStudent(e,input){
   const a=document.createElement("audio");
   a.controls=true;
@@ -140,7 +103,34 @@ function playStudent(e,input){
   input.after(a);
 }
 
-/* ===== 電腦錄音 ===== */
+// Tina 密碼解鎖
+function unlock(){
+  if(document.getElementById("pwd").value==="981027"){
+    document.getElementById("teacher").style.display="block";
+  } else alert("密碼錯誤");
+}
+
+// Tina 新增題目
+function addTwister(){
+  const lv=document.getElementById("newLevel").value;
+  const text=document.getElementById("newText").value.trim();
+  const file=document.getElementById("newAudio").files[0];
+  if(!text||!file){alert("文字與錄音都要");return;}
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const base64 = e.target.result; // 將檔案轉成 base64
+    data[lv].push({text:text,demo:base64});
+    saveData();
+    show(lv);
+  };
+  reader.readAsDataURL(file);
+
+  document.getElementById("newText").value="";
+  document.getElementById("newAudio").value="";
+}
+
+// 電腦錄音
 let rec,chunks=[],idx=0;
 async function startRec(i){
   idx=i;
@@ -155,7 +145,8 @@ async function startRec(i){
 }
 function stopRec(){rec.stop();}
 
-/* ===== 預設 ===== */
+// 初始化
+loadData();
 show("easy");
 </script>
 
