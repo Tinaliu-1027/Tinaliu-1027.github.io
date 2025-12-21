@@ -3,55 +3,231 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>仿真聖誕樹</title>
+<title>裝飾聖誕樹</title>
+
 <style>
   body {
     margin: 0;
-    font-family: sans-serif;
-    background: url('background.jpg') no-repeat center center;
-    background-size: cover;
     height: 100vh;
     overflow: hidden;
-    display: flex;
+    font-family: system-ui, sans-serif;
+    background-color: #0b1d3a; /* 深藍夜晚背景 */
     color: white;
   }
+
   .controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
     background: rgba(0,0,0,0.6);
-    padding: 20px;
-    margin: 20px;
-    border-radius: 10px;
+    padding: 16px;
+    border-radius: 12px;
     z-index: 10;
-    position: relative;
   }
+
   .controls label {
     display: block;
     margin-top: 10px;
+    font-size: 14px;
   }
+
   canvas {
     position: absolute;
-    top: 0;
     left: 0;
+    top: 0;
     cursor: grab;
   }
 </style>
 </head>
+
 <body>
+
 <div class="controls">
-  <h2>裝飾仿真聖誕樹</h2>
-  <label>樹幹顏色: <input type="color" id="trunkColor" value="#8B4513"></label>
-  <label>樹葉顏色: <input type="color" id="leafColor" value="#006400"></label>
-  <label>小球顏色: <input type="color" id="ballColor" value="#FF0000"></label>
-  <label>彩帶顏色: <input type="color" id="ribbonColor" value="#FFD700"></label>
-  <label>星星顏色: <input type="color" id="starColor" value="#FFFF00"></label>
-  <label>禮物顏色: <input type="color" id="giftColor" value="#FF69B4"></label>
-  <label>禮物數量: <input type="number" id="giftCount" value="3" min="0" max="10"></label>
+  <h3>🎄 裝飾聖誕樹</h3>
+  <label>樹幹顏色 <input type="color" id="trunkColor" value="#8B4513"></label>
+  <label>樹葉顏色 <input type="color" id="leafColor" value="#0b6b2d"></label>
+  <label>小球顏色 <input type="color" id="ballColor" value="#ff3333"></label>
+  <label>彩帶顏色 <input type="color" id="ribbonColor" value="#ffd700"></label>
+  <label>星星顏色 <input type="color" id="starColor" value="#fff176"></label>
+  <label>禮物顏色 <input type="color" id="giftColor" value="#ff69b4"></label>
+  <label>禮物數量 <input type="number" id="giftCount" value="3" min="0" max="10"></label>
 </div>
 
-<canvas id="treeCanvas" width="600" height="600"></canvas>
-<canvas id="snowCanvas" width="600" height="600"></canvas>
+<canvas id="tree" width="600" height="600"></canvas>
+<canvas id="snow" width="600" height="600"></canvas>
 
 <script>
-// （此處請貼入前面我提供過的完整 Canvas + 拖曳 + 雪花 + 樹葉 + 星星閃爍等 JavaScript 程式碼）
+const tree = document.getElementById("tree");
+const ctx = tree.getContext("2d");
+const snow = document.getElementById("snow");
+const sctx = snow.getContext("2d");
+
+const trunkColor = document.getElementById("trunkColor");
+const leafColor = document.getElementById("leafColor");
+const ballColor = document.getElementById("ballColor");
+const ribbonColor = document.getElementById("ribbonColor");
+const starColor = document.getElementById("starColor");
+const giftColor = document.getElementById("giftColor");
+const giftCount = document.getElementById("giftCount");
+
+tree.width = snow.width = window.innerWidth;
+tree.height = snow.height = window.innerHeight;
+
+let balls = [
+  {x: tree.width/2-40, y: 260, r: 8},
+  {x: tree.width/2+30, y: 300, r: 8},
+  {x: tree.width/2-20, y: 340, r: 8}
+];
+
+let gifts = [];
+
+function createGifts(){
+  gifts = [];
+  for(let i=0;i<giftCount.value;i++){
+    gifts.push({
+      x: tree.width/2 - 120 + i*60,
+      y: 480,
+      w: 40,
+      h: 40
+    });
+  }
+}
+createGifts();
+
+let starGlow = 1;
+let starDir = 0.02;
+
+function drawLeafLayer(y, width, count){
+  const cx = tree.width/2;
+  const h = 28;
+  ctx.fillStyle = leafColor.value;
+
+  for(let i=0;i<count;i++){
+    const x1 = cx - width/2 + i*(width/count);
+    const x2 = x1 + width/count;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, y);
+    ctx.lineTo(x1, y + h);
+    ctx.lineTo(x2, y + h);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawTree(){
+  ctx.clearRect(0,0,tree.width,tree.height);
+
+  // 樹幹
+  ctx.fillStyle = trunkColor.value;
+  ctx.fillRect(tree.width/2-20, 400, 40, 100);
+
+  // 樹葉
+  drawLeafLayer(120, 200, 6);
+  drawLeafLayer(170, 260, 8);
+  drawLeafLayer(230, 320, 10);
+
+  // 星星（閃爍）
+  starGlow += starDir;
+  if(starGlow > 1.5 || starGlow < 0.7) starDir *= -1;
+  ctx.fillStyle = starColor.value;
+  ctx.globalAlpha = starGlow;
+
+  ctx.beginPath();
+  ctx.moveTo(tree.width/2, 95);
+  for(let i=0;i<5;i++){
+    ctx.lineTo(tree.width/2 + 12*Math.cos((18+i*72)*Math.PI/180),
+               95 - 12*Math.sin((18+i*72)*Math.PI/180));
+    ctx.lineTo(tree.width/2 + 6*Math.cos((54+i*72)*Math.PI/180),
+               95 - 6*Math.sin((54+i*72)*Math.PI/180));
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // 彩帶
+  ctx.strokeStyle = ribbonColor.value;
+  ctx.lineWidth = 4;
+  for(let y=200;y<380;y+=50){
+    ctx.beginPath();
+    ctx.moveTo(tree.width/2-100, y);
+    ctx.quadraticCurveTo(tree.width/2, y-20, tree.width/2+100, y);
+    ctx.stroke();
+  }
+
+  // 小球
+  balls.forEach(b=>{
+    ctx.fillStyle = ballColor.value;
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // 禮物
+  ctx.fillStyle = giftColor.value;
+  gifts.forEach(g=>{
+    ctx.fillRect(g.x,g.y,g.w,g.h);
+  });
+}
+
+// 雪花
+const snowflakes = Array.from({length:120},()=>({
+  x: Math.random()*snow.width,
+  y: Math.random()*snow.height,
+  r: Math.random()*2+1,
+  s: Math.random()*1+0.5
+}));
+
+function drawSnow(){
+  sctx.clearRect(0,0,snow.width,snow.height);
+  sctx.fillStyle = "white";
+  snowflakes.forEach(f=>{
+    f.y += f.s;
+    if(f.y > snow.height) f.y = 0;
+    sctx.beginPath();
+    sctx.arc(f.x,f.y,f.r,0,Math.PI*2);
+    sctx.fill();
+  });
+}
+
+// 拖曳
+let drag=null, ox=0, oy=0;
+
+tree.addEventListener("mousedown",e=>{
+  const r = tree.getBoundingClientRect();
+  const x = e.clientX - r.left;
+  const y = e.clientY - r.top;
+
+  [...balls, ...gifts].forEach(o=>{
+    if(o.r && Math.hypot(x-o.x,y-o.y)<o.r || 
+      (!o.r && x>o.x&&x<o.x+o.w&&y>o.y&&y<o.y+o.h)){
+      drag=o;
+      ox=x-(o.x||0);
+      oy=y-(o.y||0);
+    }
+  });
+});
+
+tree.addEventListener("mousemove",e=>{
+  if(!drag) return;
+  const r = tree.getBoundingClientRect();
+  drag.x = e.clientX - r.left - ox;
+  drag.y = e.clientY - r.top - oy;
+});
+
+window.addEventListener("mouseup",()=>drag=null);
+
+// 監聽
+giftCount.oninput = createGifts;
+
+function animate(){
+  drawTree();
+  drawSnow();
+  requestAnimationFrame(animate);
+}
+animate();
 </script>
+
 </body>
 </html>
+
