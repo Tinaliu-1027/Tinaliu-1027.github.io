@@ -3,204 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tina 正音班 - 手機版</title>
+<title>Tina 正音班｜闖關版</title>
 <style>
-body { font-family:'Microsoft JhengHei'; background:#fdf6f0; margin:0; padding:20px;}
-header { background:#ffb6b9; padding:20px; text-align:center; color:white; font-size:2em; font-weight:bold;}
-nav { display:flex; justify-content:center; flex-wrap:wrap; background:#ffe0e0; padding:10px 0;}
-nav a { margin:5px 15px; text-decoration:none; color:#333; font-weight:bold;}
-nav a:hover { color:#ff4c4c; }
-main { padding:20px; max-width:800px; margin:auto;}
-h2 { color:#ff4c4c; }
-.tongue-twister { background:#fff4f4; padding:15px; margin-bottom:15px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
-.tongue-twister audio { margin-top:10px; width:100%; }
-.feedback { margin-top:5px; color:#ff4c4c; font-weight:bold;}
-button { margin:5px 0; padding:10px 20px; border:none; border-radius:5px; background:#ffb6b9; color:white; font-weight:bold; cursor:pointer;}
-button:hover { background:#ff4c4c; }
-footer { text-align:center; padding:15px; background:#ffb6b9; color:white; margin-top:30px;}
-@media(max-width:500px){ nav{flex-direction:column;} button{width:80%; }}
+body{font-family:"Microsoft JhengHei",sans-serif;background:#fdf6f0;margin:0}
+header{background:#ffb6b9;color:#fff;padding:20px;text-align:center;font-size:26px;font-weight:bold}
+main{max-width:900px;margin:auto;padding:20px}
+h2{color:#ff4c4c}
+.levels button{margin:5px;padding:10px 18px;border:none;background:#ffb6b9;color:#fff;border-radius:6px}
+.card{background:#fff;padding:15px;border-radius:10px;margin-bottom:20px;position:relative}
+audio{width:100%;margin-top:8px}
+.lock{background:#ffe0e0;padding:12px;border-radius:10px;margin-top:30px}
+.computer-only{background:#fff4f4;padding:10px;border-radius:8px;margin-top:10px}
+@media(max-width:768px){.computer-only{display:none}}
+.progress{position:absolute;top:10px;right:10px;font-weight:bold;color:#ff4c4c}
+footer{text-align:center;padding:15px;background:#ffb6b9;color:white}
 </style>
 </head>
+
 <body>
+<header>🎤 Tina 正音班｜闖關版</header>
+<main>
 
-<header>Tina 正音班</header>
-<nav>
-    <a href="#home">首頁</a>
-    <a href="#manage">新增繞口令（僅 Tina）</a>
-    <a href="#list">繞口令列表</a>
-</nav>
+<h2>分級挑戰</h2>
+<div class="levels">
+  <button onclick="show('easy')">簡單</button>
+  <button onclick="show('medium')">中等</button>
+  <button onclick="show('hard')">困難</button>
+</div>
+<div id="progressArea"></div>
+<div id="list"></div>
 
-<main id="home">
-    <h2>歡迎來到 Tina 正音班！</h2>
-    <p>你可以新增繞口令與 Tina 示範音檔，學員可以上傳自己的錄音並即時比對發音！</p>
+<h2>🔒 Tina 老師專用（新增繞口令＋示範）</h2>
+<div class="lock">
+<input type="password" id="pwd" placeholder="輸入密碼">
+<button onclick="unlock()">解鎖</button>
+<div id="teacher" style="display:none">
+<p>難度：
+<select id="newLevel">
+<option value="easy">簡單</option>
+<option value="medium">中等</option>
+<option value="hard">困難</option>
+</select></p>
+<textarea id="newText" placeholder="輸入繞口令" rows="3" style="width:100%"></textarea>
+<p>示範錄音：</p>
+<input type="file" accept="audio/*" id="newAudio">
+<br><br>
+<button onclick="addTwister()">➕ 新增</button>
+</div>
+</div>
 </main>
 
-<!-- Tina 上傳區，密碼鎖 -->
-<main id="manage">
-    <h2>新增繞口令（僅 Tina）</h2>
-    <label>輸入密碼解鎖上傳區：</label>
-    <input type="password" id="tinaPasswordInput" placeholder="輸入密碼">
-    <button onclick="checkTinaPassword()">確認</button>
-
-    <div id="tinaUploadSection" style="display:none; margin-top:10px;">
-        <label>選擇難度：</label>
-        <select id="levelSelect">
-            <option value="easy">簡單</option>
-            <option value="medium">中等</option>
-            <option value="hard">困難</option>
-        </select>
-        <br><br>
-        <label>繞口令文字：</label><br>
-        <textarea id="twisterText" rows="2" style="width:100%;"></textarea>
-        <br><br>
-        <label>Tina 示範錄音（可自訂檔名）：</label>
-        <input type="file" id="twisterTinaAudio" accept="audio/*">
-        <input type="text" id="tinaFileName" placeholder="輸入 Tina 音檔檔名">
-        <br><br>
-        <button onclick="addTwister()">新增繞口令</button>
-    </div>
-</main>
-
-<main id="list">
-    <h2>繞口令列表</h2>
-    <div id="twisterContainer"></div>
-</main>
-
-<footer>© 2025 Tina 正音班</footer>
+<footer>© Tina 正音班</footer>
 
 <script>
-// 密碼鎖
-function checkTinaPassword(){
-    const pwd = document.getElementById('tinaPasswordInput').value;
-    if(pwd === "981027"){
-        document.getElementById('tinaUploadSection').style.display = "block";
-        document.getElementById('tinaPasswordInput').style.display = "none";
-        document.querySelector("#manage button").style.display = "none";
-    } else {
-        alert("密碼錯誤！");
-    }
+/* ===== 資料 ===== */
+const data={easy:[],medium:[],hard:[]};
+let current="easy";
+
+/* ===== 進度讀取 ===== */
+function loadProgress(){
+  const p=JSON.parse(localStorage.getItem("progress")||'{}');
+  return p;
+}
+function saveProgress(prog){
+  localStorage.setItem("progress",JSON.stringify(prog));
 }
 
-// 資料結構
-let tongueTwisters = {
-    easy: [],
-    medium: [],
-    hard: []
-};
+/* ===== 顯示 ===== */
+function show(level){
+  current=level;
+  const list=document.getElementById("list");
+  list.innerHTML="";
+  const progressArea=document.getElementById("progressArea");
+  const prog=loadProgress();
+  let done=(prog[level]||[]).length;
+  let total=data[level].length;
+  progressArea.innerText=`${level}進度: ${done}/${total} 完成`;
 
-// 顯示繞口令
-function renderTwisters() {
-    const container = document.getElementById('twisterContainer');
-    container.innerHTML = '';
-    ['easy','medium','hard'].forEach(level=>{
-        if(tongueTwisters[level].length > 0){
-            const h = document.createElement('h3');
-            h.textContent = level === 'easy' ? '簡單' : level === 'medium' ? '中等' : '困難';
-            container.appendChild(h);
-        }
-        tongueTwisters[level].forEach((tt,index)=>{
-            const div = document.createElement('div');
-            div.className = 'tongue-twister';
-            let html = `<p>${tt.text}</p>`;
-            // Tina 示範音檔播放（學員可看）
-            if(tt.tinaAudio){
-                html += `<p>Tina 示範 (${tt.tinaFileName}):</p>
-                         <audio controls src="${tt.tinaAudio}"></audio>`;
-            }
-            // 學員錄音上傳區
-            html += `<p>上傳你的錄音：</p>
-                     <input type="file" accept="audio/*" onchange="uploadStudentAudio(event,'${level}',${index})">
-                     <div id="studentAudio-${level}-${index}"></div>
-                     <div class="feedback" id="feedback-${level}-${index}"></div>`;
-            div.innerHTML = html;
-            container.appendChild(div);
-        });
-    });
+  data[level].forEach((t,i)=>{
+    const isDone=(prog[level]||[]).includes(i);
+    list.innerHTML+=`
+    <div class="card">
+      <span class="progress">${isDone?'✔ 完成':''}</span>
+      <p>${t.text}</p>
+      <p>🎧 Tina 示範</p>
+      ${t.demo?`<audio controls src="${t.demo}"></audio>`:`<p>（尚未上傳示範）</p>`}
+      <p>🎤 學員錄音</p>
+      <input type="file" accept="audio/*" onchange="playStudent(event,this)">
+      <div class="computer-only">
+        <button onclick="startRec(${i})">🎙️ 錄音</button>
+        <button onclick="stopRec()">⏹ 停止</button>
+        <audio id="pb-${i}" controls></audio>
+      </div>
+      <p><input type="checkbox" onchange="toggleDone(${i},this)" ${isDone?'checked':''}> 已完成</p>
+    </div>`;
+  });
 }
 
-// 新增繞口令（僅 Tina）
+/* ===== 勾選功能 ===== */
+function toggleDone(i,chk){
+  const prog=loadProgress();
+  if(!prog[current]) prog[current]=[];
+  if(chk.checked){
+    if(!prog[current].includes(i)) prog[current].push(i);
+  } else {
+    prog[current]=prog[current].filter(x=>x!==i);
+  }
+  saveProgress(prog);
+  show(current);
+}
+
+/* ===== Tina 解鎖 ===== */
+function unlock(){
+  if(document.getElementById("pwd").value==="981027"){
+    document.getElementById("teacher").style.display="block";
+  } else alert("密碼錯誤");
+}
+
+/* ===== Tina 新增題目 ===== */
 function addTwister(){
-    const level = document.getElementById('levelSelect').value;
-    const text = document.getElementById('twisterText').value.trim();
-    const fileInput = document.getElementById('twisterTinaAudio');
-    const fileNameInput = document.getElementById('tinaFileName').value.trim();
-    
-    if(!text){ alert("請輸入繞口令文字"); return; }
-    
-    let tinaAudioURL = null;
-    let tinaFileName = fileNameInput || (fileInput.files.length>0 ? fileInput.files[0].name : "Tina音檔");
-    if(fileInput.files.length>0){
-        tinaAudioURL = URL.createObjectURL(fileInput.files[0]);
-    }
-    
-    tongueTwisters[level].push({text:text, tinaAudio:tinaAudioURL, tinaFileName:tinaFileName, studentAudios:[]});
-    
-    document.getElementById('twisterText').value='';
-    fileInput.value='';
-    document.getElementById('tinaFileName').value='';
-    
-    renderTwisters();
+  const lv=document.getElementById("newLevel").value;
+  const text=document.getElementById("newText").value.trim();
+  const file=document.getElementById("newAudio").files[0];
+  if(!text||!file){alert("文字與錄音都要");return;}
+  data[lv].push({text:text,demo:URL.createObjectURL(file)});
+  document.getElementById("newText").value="";
+  document.getElementById("newAudio").value="";
+  show(lv);
 }
 
-// 學員錄音上傳並比對 Tina 音檔
-function uploadStudentAudio(event, level, index){
-    const files = event.target.files;
-    const container = document.getElementById(`studentAudio-${level}-${index}`);
-    const feedback = document.getElementById(`feedback-${level}-${index}`);
-    container.innerHTML = '';
-    feedback.innerHTML = '';
-
-    Array.from(files).forEach(file=>{
-        const url = URL.createObjectURL(file);
-        const audio = document.createElement('audio');
-        audio.controls = true;
-        audio.src = url;
-        container.appendChild(audio);
-        tongueTwisters[level][index].studentAudios.push({name:file.name, url:url});
-
-        // 簡單比對：平均音量差異
-        if(tongueTwisters[level][index].tinaAudio){
-            compareAudio(tongueTwisters[level][index].tinaAudio, url, feedback);
-        }
-    });
+/* ===== 學員播放 ===== */
+function playStudent(e,input){
+  const a=document.createElement("audio");
+  a.controls=true;
+  a.src=URL.createObjectURL(e.target.files[0]);
+  input.after(a);
 }
 
-// 簡單比對：音量峰值差異
-function compareAudio(tinaURL, studentURL, feedbackDiv){
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const context = new AudioContext();
-
-    Promise.all([fetch(tinaURL).then(r=>r.arrayBuffer()), fetch(studentURL).then(r=>r.arrayBuffer())])
-    .then(buffers=>Promise.all(buffers.map(b=>context.decodeAudioData(b))))
-    .then(decoded=>{
-        const [tinaData, studentData] = decoded;
-        const tinaVol = getAvgVolume(tinaData.getChannelData(0));
-        const studentVol = getAvgVolume(studentData.getChannelData(0));
-        const diff = Math.abs(tinaVol - studentVol);
-        if(diff < 0.05){
-            feedbackDiv.textContent = "🎉 發音接近 Tina！";
-        } else if(diff < 0.15){
-            feedbackDiv.textContent = "🙂 發音稍有差異，可以再清晰一些";
-        } else {
-            feedbackDiv.textContent = "⚠️ 發音差異較大，建議再練習";
-        }
-    })
-    .catch(err=>{
-        console.log("音訊比對錯誤:", err);
-        feedbackDiv.textContent = "⚠️ 無法比對音訊";
-    });
+/* ===== 電腦錄音 ===== */
+let rec,chunks=[],idx=0;
+async function startRec(i){
+  idx=i;
+  const s=await navigator.mediaDevices.getUserMedia({audio:true});
+  rec=new MediaRecorder(s);
+  chunks=[];
+  rec.ondataavailable=e=>chunks.push(e.data);
+  rec.onstop=()=>{
+    document.getElementById(`pb-${idx}`).src=URL.createObjectURL(new Blob(chunks));
+  };
+  rec.start();
 }
+function stopRec(){rec.stop();}
 
-function getAvgVolume(data){
-    let sum = 0;
-    for(let i=0;i<data.length;i++){
-        sum += Math.abs(data[i]);
-    }
-    return sum/data.length;
-}
-
-// 初始化
-renderTwisters();
+/* ===== 預設 ===== */
+show("easy");
 </script>
 
 </body>
