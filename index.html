@@ -190,15 +190,19 @@ function draw(){
   leafLayer(245,230,65,leaf.value);
   leafLayer(310,300,80,leaf.value);
 
-  // 🎀 彩帶
-  ctx.strokeStyle=ribbon.value;
-  ctx.lineWidth=4;
-  [[245,110],[310,150]].forEach(([y,w])=>{
-    ctx.beginPath();
-    ctx.moveTo(CX()-w,y);
-    ctx.quadraticCurveTo(CX(),y-18,CX()+w,y);
-    ctx.stroke();
-  });
+  // 🎀 彩帶（三層，符合樹大小）
+ctx.strokeStyle = ribbon.value;
+ctx.lineWidth = 4;
+[
+  [215, 80],   // 最上層
+  [255,110],  // 中層
+  [315,150]   // 最下層
+].forEach(([y,w])=>{
+  ctx.beginPath();
+  ctx.moveTo(CX()-w,y);
+  ctx.quadraticCurveTo(CX(),y-18,CX()+w,y);
+  ctx.stroke();
+});
 
   // 🔴 小球
   balls.forEach(b=>{
