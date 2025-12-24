@@ -16,15 +16,15 @@ body{
   position:fixed;
   left:20px;
   top:20px;
-  background:rgba(20,30,50,.8);
+  background:rgba(20,30,50,.85);
   padding:16px;
   border-radius:16px;
   z-index:10;
   font-size:14px;
 }
-.controls label{display:block;margin-top:8px}
+.controls label{display:block;margin-top:6px}
 button{
-  margin-top:8px;
+  margin-top:6px;
   padding:6px 10px;
   border-radius:8px;
   border:none;
@@ -50,37 +50,48 @@ button{
 <canvas id="c"></canvas>
 
 <script>
+/* ---------- 基本 ---------- */
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
 resize();addEventListener("resize",resize);
+const CX = ()=>canvas.width/2;
 
+/* ---------- 控制 ---------- */
 const leaf=document.getElementById("leaf");
 const ballColor=document.getElementById("ball");
 const ribbonColor=document.getElementById("ribbon");
 const star=document.getElementById("star");
 const giftColor=document.getElementById("gift");
-const CX=()=>canvas.width/2;
 
-const snapLines=[190,245,310]; // 樹葉中心
-let activeSnap=null;
+/* ---------- 星星 ---------- */
+let starPulse=1,dir=0.01;
 
+/* ---------- 物件 ---------- */
 const balls=[];
 const ribbons=[
   {y:215,w:80},
   {y:255,w:110},
   {y:315,w:150}
 ];
+const gifts=[
+  {x:-60,y:470,w:40,h:30},
+  {x:0,y:470,w:40,h:30},
+  {x:60,y:470,w:40,h:30}
+];
 
-let dragging=null;
-
-// ❄ 雪
-const snow=Array.from({length:120},()=>({
+/* ---------- 雪 ---------- */
+const snow=Array.from({length:140},()=>({
   x:Math.random()*innerWidth,
   y:Math.random()*innerHeight,
   r:Math.random()*2+1,
   s:Math.random()*0.6+0.3
 }));
+
+/* ---------- 拖曳 ---------- */
+let dragging=null;
+const snapLines=[190,245,310];
+let activeSnap=null;
 
 function getPos(e){
   if(e.touches){
@@ -93,16 +104,20 @@ function getPos(e){
 function start(e){
   const {x,y}=getPos(e);
 
-  for(let r of ribbons){
+  for(let i=ribbons.length-1;i>=0;i--){
+    const r=ribbons[i];
     if(Math.abs(y-r.y)<10 && Math.abs(x-CX())<r.w){
       dragging=r;dragging.type="ribbon";return;
     }
   }
-  for(let b of balls){
+
+  for(let i=balls.length-1;i>=0;i--){
+    const b=balls[i];
     if(Math.hypot(x-(CX()+b.x),y-b.y)<b.r){
       dragging=b;dragging.type="ball";return;
     }
   }
+
   balls.push({x:x-CX(),y:y,r:9});
 }
 
@@ -132,7 +147,14 @@ canvas.addEventListener("touchstart",start,{passive:false});
 canvas.addEventListener("touchmove",move,{passive:false});
 canvas.addEventListener("touchend",end);
 
-// 💾 儲存 / 載入
+/* ---------- Backspace ---------- */
+addEventListener("keydown",e=>{
+  if(e.key==="Backspace" && balls.length){
+    balls.pop();e.preventDefault();
+  }
+});
+
+/* ---------- 儲存 / 載入 ---------- */
 function saveDesign(){
   localStorage.setItem("treeDesign",JSON.stringify({
     balls,ribbons,
@@ -150,13 +172,14 @@ function loadDesign(){
   if(!d) return;
   balls.length=0;d.balls.forEach(b=>balls.push(b));
   d.ribbons.forEach((r,i)=>ribbons[i].y=r.y);
-  Object.assign(leaf,{value:d.colors.leaf});
-  Object.assign(ballColor,{value:d.colors.ball});
-  Object.assign(ribbonColor,{value:d.colors.ribbon});
-  Object.assign(star,{value:d.colors.star});
-  Object.assign(giftColor,{value:d.colors.gift});
+  leaf.value=d.colors.leaf;
+  ballColor.value=d.colors.ball;
+  ribbonColor.value=d.colors.ribbon;
+  star.value=d.colors.star;
+  giftColor.value=d.colors.gift;
 }
 
+/* ---------- 畫圖 ---------- */
 function leafLayer(y,w,h,c){
   ctx.fillStyle=c;
   ctx.beginPath();
@@ -164,6 +187,12 @@ function leafLayer(y,w,h,c){
   ctx.quadraticCurveTo(CX(),y-h,CX()+w/2,y);
   ctx.quadraticCurveTo(CX(),y+h*0.7,CX()-w/2,y);
   ctx.fill();
+}
+function drawBow(x,y,c){
+  ctx.fillStyle=c;
+  ctx.beginPath();ctx.ellipse(x-6,y,6,4,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+6,y,6,4,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
 }
 
 function draw(){
@@ -178,10 +207,32 @@ function draw(){
     ctx.stroke();
   }
 
+  // 星星
+  starPulse+=dir;
+  if(starPulse>1.25||starPulse<0.8)dir*=-1;
+  ctx.save();
+  ctx.translate(CX(),155);
+  ctx.scale(starPulse,starPulse);
+  ctx.fillStyle=star.value;
+  ctx.beginPath();
+  for(let i=0;i<5;i++){
+    ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*14,
+               -Math.sin((18+i*72)*Math.PI/180)*14);
+    ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*6,
+               -Math.sin((54+i*72)*Math.PI/180)*6);
+  }
+  ctx.fill();ctx.restore();
+
+  // 樹幹
+  ctx.fillStyle="#8b5a2b";
+  ctx.fillRect(CX()-18,300,36,160);
+
+  // 樹葉
   leafLayer(190,160,50,leaf.value);
   leafLayer(245,230,65,leaf.value);
   leafLayer(310,300,80,leaf.value);
 
+  // 彩帶
   ctx.strokeStyle=ribbonColor.value;
   ctx.lineWidth=4;
   ribbons.forEach(r=>{
@@ -191,6 +242,7 @@ function draw(){
     ctx.stroke();
   });
 
+  // 小球
   balls.forEach(b=>{
     ctx.fillStyle=ballColor.value;
     ctx.beginPath();
@@ -198,6 +250,14 @@ function draw(){
     ctx.fill();
   });
 
+  // 禮物
+  gifts.forEach(g=>{
+    ctx.fillStyle=giftColor.value;
+    ctx.fillRect(CX()+g.x-g.w/2,g.y,g.w,g.h);
+    drawBow(CX()+g.x,g.y-4,ribbonColor.value);
+  });
+
+  // 雪
   ctx.fillStyle="white";
   snow.forEach(s=>{
     s.y+=s.s;if(s.y>canvas.height)s.y=0;
