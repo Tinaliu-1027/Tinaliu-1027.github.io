@@ -2,34 +2,26 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>日系風格聖誕樹（手機＋音樂完整版）</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>吉卜力風格聖誕樹</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body{
   margin:0;
-  background:linear-gradient(#1c2b3a,#0f1824);
+  background:linear-gradient(#1a2a3a,#0e1824);
   overflow:hidden;
-  touch-action:none;
   font-family:system-ui,-apple-system,sans-serif;
   color:white;
 }
 .controls{
   position:fixed;
-  left:12px;
-  top:12px;
-  background:rgba(30,40,55,.78);
-  padding:12px;
-  border-radius:14px;
-  font-size:13px;
+  left:20px;
+  top:20px;
+  background:rgba(30,40,60,.75);
+  padding:16px;
+  border-radius:18px;
+  font-size:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
   z-index:10;
-}
-button{
-  margin-top:6px;
-  padding:6px 10px;
-  border-radius:10px;
-  border:none;
-  background:#ffe6b3;
-  cursor:pointer;
 }
 </style>
 </head>
@@ -37,21 +29,14 @@ button{
 <body>
 
 <div class="controls">
-  <strong>🎄 日系聖誕樹</strong><br>
-  👉 拖彩帶 / 小球<br>
-  👉 點空白新增小球<br>
-  <button id="musicBtn">🎵 播放音樂</button>
+  <strong>🌲 裝飾聖誕樹</strong><br>
+  👉 拖彩帶 / 裝飾小球<br>
+  👉 點樹上新增小球
 </div>
-
-<!-- 🎵 背景音樂（Pixabay 無版權） -->
-<audio id="bgm" loop preload="auto">
-  <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c7d3d0b2e.mp3" type="audio/mpeg">
-</audio>
 
 <canvas id="c"></canvas>
 
 <script>
-/* ========= 基本設定 ========= */
 const canvas = document.getElementById("c");
 const ctx = canvas.getContext("2d");
 const CX = ()=>canvas.width/2;
@@ -60,184 +45,146 @@ function resize(){
   canvas.width = innerWidth;
   canvas.height = innerHeight;
 }
-resize(); addEventListener("resize",resize);
+resize(); addEventListener("resize", resize);
 
-/* ========= 🎵 音樂（關鍵修正） ========= */
-const bgm = document.getElementById("bgm");
-const musicBtn = document.getElementById("musicBtn");
-bgm.volume = 0.4;
-let isPlaying = false;
-
-musicBtn.addEventListener("click", () => {
-  if (!isPlaying) {
-    bgm.play().then(()=>{
-      isPlaying = true;
-      musicBtn.textContent = "⏸ 暫停音樂";
-    }).catch(()=>{
-      alert("瀏覽器阻擋播放，請再點一次");
-    });
-  } else {
-    bgm.pause();
-    isPlaying = false;
-    musicBtn.textContent = "🎵 播放音樂";
-  }
-});
-
-/* ========= 🌲 樹參數 ========= */
-const treeTop = 140;
+/* 🌲 樹形參數（吉卜力比例） */
+const treeTop = 170;
 const treeBottom = 380;
-const maxWidth = 260;
+const maxWidth = 300;
 
 function treeWidthAt(y){
   const t = (y-treeTop)/(treeBottom-treeTop);
-  return maxWidth*(1-t*0.8);
+  return maxWidth*(1-t*0.85);
 }
 
-/* ========= 🎀 彩帶 ========= */
+/* 🎀 彩帶（可拖） */
 const ribbons=[
-  {y:240,offset:0},
-  {y:290,offset:0},
-  {y:340,offset:0}
+  {y:255,offset:0},
+  {y:305,offset:0},
+  {y:355,offset:0}
 ];
 
-/* ========= 🔴 裝飾小球 ========= */
+/* 🔴 裝飾小球 */
 const balls=[
-  {x:-30,y:260,r:9},
-  {x:40,y:300,r:10}
+  {x:-40,y:270,r:9},
+  {x:30,y:315,r:10}
 ];
 
-let dragging=null;
-let dragType=null;
-let moved=false;
+let dragging=null, type=null;
 
-/* ========= ⭐ 五角星 ========= */
-let starPulse=1,dir=0.008;
+/* ⭐ 五角星動畫 */
+let starPulse=1,dir=0.006;
 
-/* ========= 觸控 / 滑鼠共用 ========= */
-function getPos(e){
-  if(e.touches){
-    return {x:e.touches[0].clientX,y:e.touches[0].clientY};
-  }
-  return {x:e.offsetX,y:e.offsetY};
-}
-
-function start(e){
-  e.preventDefault();
-  moved=false;
-  const {x,y}=getPos(e);
+/* 🖱 互動 */
+canvas.onmousedown=e=>{
+  const x=e.offsetX,y=e.offsetY;
 
   ribbons.forEach(r=>{
-    if(Math.abs(y-r.y)<14){
-      dragging=r; dragType="ribbon";
-    }
+    if(Math.abs(y-r.y)<10){ dragging=r; type="ribbon"; }
   });
 
   balls.forEach(b=>{
-    if(Math.hypot(x-(CX()+b.x),y-b.y)<b.r+10){
-      dragging=b; dragType="ball";
+    if(Math.hypot(x-(CX()+b.x),y-b.y)<b.r+6){
+      dragging=b; type="ball";
     }
   });
-}
+};
 
-function move(e){
+canvas.onmousemove=e=>{
   if(!dragging) return;
-  e.preventDefault();
-  moved=true;
-  const {x,y}=getPos(e);
-
-  if(dragType==="ribbon") dragging.offset=x-CX();
-  if(dragType==="ball"){
-    dragging.x=x-CX();
-    dragging.y=y;
+  if(type==="ribbon") dragging.offset=e.offsetX-CX();
+  if(type==="ball"){
+    dragging.x=e.offsetX-CX();
+    dragging.y=e.offsetY;
   }
-}
+};
 
-function end(e){
-  if(!dragging && !moved){
-    const {x,y}=getPos(e);
+canvas.onmouseup=e=>{
+  if(!dragging){
+    const y=e.offsetY;
     if(y>treeTop && y<treeBottom){
-      balls.push({x:x-CX(),y,r:8+Math.random()*3});
+      balls.push({
+        x:e.offsetX-CX(),
+        y,
+        r:8+Math.random()*3
+      });
     }
   }
-  dragging=null; dragType=null;
-}
+  dragging=null; type=null;
+};
 
-canvas.addEventListener("mousedown",start);
-canvas.addEventListener("mousemove",move);
-canvas.addEventListener("mouseup",end);
-canvas.addEventListener("touchstart",start,{passive:false});
-canvas.addEventListener("touchmove",move,{passive:false});
-canvas.addEventListener("touchend",end);
-
-/* ========= 繪製 ========= */
-function drawTree(){
-  ctx.fillStyle="#5f8f7a";
+/* 🌿 手繪樹葉 */
+function softLeaf(y,w,h,color){
+  ctx.fillStyle=color;
+  ctx.shadowColor="rgba(0,0,0,.25)";
+  ctx.shadowBlur=14;
   ctx.beginPath();
-  ctx.moveTo(CX(),treeTop);
-  ctx.bezierCurveTo(
-    CX()-maxWidth/2,treeTop+80,
-    CX()-maxWidth/2,treeBottom,
-    CX(),treeBottom
-  );
-  ctx.bezierCurveTo(
-    CX()+maxWidth/2,treeBottom,
-    CX()+maxWidth/2,treeTop+80,
-    CX(),treeTop
-  );
+  ctx.moveTo(CX(),y-h);
+  ctx.bezierCurveTo(CX()-w/2,y-h/2,CX()-w/2,y+h/2,CX(),y+h);
+  ctx.bezierCurveTo(CX()+w/2,y+h/2,CX()+w/2,y-h/2,CX(),y-h);
   ctx.fill();
 }
 
+/* ⭐ 五角星 */
+function drawStar(){
+  starPulse+=dir;
+  if(starPulse>1.2||starPulse<0.85)dir*=-1;
+
+  ctx.save();
+  ctx.translate(CX(),treeTop-22);
+  ctx.scale(starPulse,starPulse);
+  ctx.fillStyle="#fff3b0";
+  ctx.shadowColor="#fff3b0";
+  ctx.shadowBlur=35;
+  ctx.beginPath();
+  for(let i=0;i<5;i++){
+    ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*14,
+               -Math.sin((18+i*72)*Math.PI/180)*14);
+    ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*6,
+               -Math.sin((54+i*72)*Math.PI/180)*6);
+  }
+  ctx.fill();
+  ctx.restore();
+}
+
+/* 🎀 彩帶（貼樹） */
 function drawRibbons(){
-  ctx.strokeStyle="#f3d58a";
-  ctx.lineWidth=5;
+  ctx.strokeStyle="#f2cc8f";
+  ctx.lineWidth=4.5;
   ctx.lineCap="round";
+
   ribbons.forEach(r=>{
     const w=treeWidthAt(r.y)/2;
     ctx.beginPath();
     ctx.moveTo(CX()-w+r.offset*0.2,r.y);
-    ctx.quadraticCurveTo(CX()+r.offset,r.y-12,CX()+w+r.offset*0.2,r.y);
+    ctx.quadraticCurveTo(CX()+r.offset,r.y-18,CX()+w+r.offset*0.2,r.y);
     ctx.stroke();
   });
 }
 
+/* 🔴 裝飾小球 */
 function drawBalls(){
   balls.forEach(b=>{
-    ctx.fillStyle="#e38b7a";
+    ctx.fillStyle="#e07a5f";
     ctx.shadowColor="rgba(255,255,255,.6)";
-    ctx.shadowBlur=8;
+    ctx.shadowBlur=10;
     ctx.beginPath();
     ctx.arc(CX()+b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle="rgba(255,255,255,.35)";
+    ctx.beginPath();
+    ctx.arc(CX()+b.x-b.r/3,b.y-b.r/3,b.r/3,0,Math.PI*2);
     ctx.fill();
   });
   ctx.shadowBlur=0;
 }
 
-function drawStar(){
-  starPulse+=dir;
-  if(starPulse>1.2||starPulse<0.9) dir*=-1;
-  ctx.save();
-  ctx.translate(CX(),treeTop-18);
-  ctx.scale(starPulse,starPulse);
-  ctx.fillStyle="#fff1a8";
-  ctx.shadowColor="#fff1a8";
-  ctx.shadowBlur=20;
-  ctx.beginPath();
-  for(let i=0;i<5;i++){
-    ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*12,
-               -Math.sin((18+i*72)*Math.PI/180)*12);
-    ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*5,
-               -Math.sin((54+i*72)*Math.PI/180)*5);
-  }
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-/* ========= 背景 ========= */
+/* ❄ 背景雪 */
 const snow=Array.from({length:120},()=>({
   x:Math.random()*innerWidth,
   y:Math.random()*innerHeight,
-  s:Math.random()*0.4+0.2
+  s:Math.random()*0.5+0.3
 }));
 
 function drawBG(){
@@ -246,7 +193,7 @@ function drawBG(){
     s.y+=s.s;
     if(s.y>canvas.height) s.y=0;
     ctx.beginPath();
-    ctx.arc(s.x,s.y,1.2,0,Math.PI*2);
+    ctx.arc(s.x,s.y,1.4,0,Math.PI*2);
     ctx.fill();
   });
 }
@@ -255,7 +202,9 @@ function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   drawBG();
   drawStar();
-  drawTree();
+  softLeaf(220,180,70,"#5f8f7a");
+  softLeaf(280,240,80,"#4f7f6a");
+  softLeaf(350,300,95,"#3f6f5a");
   drawRibbons();
   drawBalls();
   requestAnimationFrame(draw);
