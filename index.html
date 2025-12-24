@@ -23,6 +23,10 @@ body{
   font-size:14px;
 }
 .controls label{display:block;margin-top:6px}
+.controls input,.controls select{
+  width:100%;
+  margin-top:4px;
+}
 button{
   margin-top:6px;
   padding:6px 10px;
@@ -38,61 +42,49 @@ button{
 
 <div class="controls">
   <strong>🎄 裝飾聖誕樹</strong>
-  <label>樹葉 <input type="color" id="leaf" value="#1f6b45"></label>
-  <label>小球 <input type="color" id="ball" value="#c0392b"></label>
-  <label>彩帶 <input type="color" id="ribbon" value="#d4af37"></label>
-  <label>星星 <input type="color" id="star" value="#fff2a8"></label>
-  <label>禮物 <input type="color" id="gift" value="#ff6fae"></label>
+
+  <label>存檔名稱
+    <input id="saveName" placeholder="例如：我的第一棵樹">
+  </label>
+
   <button onclick="saveDesign()">💾 儲存</button>
+
+  <label>選擇存檔
+    <select id="saveList"></select>
+  </label>
+
   <button onclick="loadDesign()">▶️ 載入</button>
+  <button onclick="deleteDesign()">🗑 刪除</button>
 </div>
 
 <canvas id="c"></canvas>
 
 <script>
-/* ---------- 基本 ---------- */
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
+/* ===== Canvas ===== */
+const canvas=document.getElementById("c");
+const ctx=canvas.getContext("2d");
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
 resize();addEventListener("resize",resize);
-const CX = ()=>canvas.width/2;
+const CX=()=>canvas.width/2;
 
-/* ---------- 控制 ---------- */
-const leaf=document.getElementById("leaf");
-const ballColor=document.getElementById("ball");
-const ribbonColor=document.getElementById("ribbon");
-const star=document.getElementById("star");
-const giftColor=document.getElementById("gift");
-
-/* ---------- 星星 ---------- */
-let starPulse=1,dir=0.01;
-
-/* ---------- 物件 ---------- */
+/* ===== 物件 ===== */
 const balls=[];
 const ribbons=[
-  {y:215,w:80},
-  {y:255,w:110},
-  {y:315,w:150}
-];
-const gifts=[
-  {x:-60,y:470,w:40,h:30},
-  {x:0,y:470,w:40,h:30},
-  {x:60,y:470,w:40,h:30}
+  {y:215,w:90},
+  {y:255,w:120},
+  {y:315,w:160}
 ];
 
-/* ---------- 雪 ---------- */
-const snow=Array.from({length:140},()=>({
+/* ===== 雪 ===== */
+const snow=Array.from({length:120},()=>({
   x:Math.random()*innerWidth,
   y:Math.random()*innerHeight,
   r:Math.random()*2+1,
   s:Math.random()*0.6+0.3
 }));
 
-/* ---------- 拖曳 ---------- */
+/* ===== 拖曳 ===== */
 let dragging=null;
-const snapLines=[190,245,310];
-let activeSnap=null;
-
 function getPos(e){
   if(e.touches){
     const r=canvas.getBoundingClientRect();
@@ -122,23 +114,13 @@ function start(e){
 }
 
 function move(e){
-  if(!dragging) return;
+  if(!dragging)return;
   const {x,y}=getPos(e);
-  activeSnap=null;
-
-  for(let s of snapLines){
-    if(Math.abs(y-s)<8){
-      dragging.y=s;
-      activeSnap=s;
-      break;
-    }
-  }
-  if(!activeSnap) dragging.y=y;
+  dragging.y=y;
   if(dragging.type==="ball") dragging.x=x-CX();
   e.preventDefault();
 }
-
-function end(){dragging=null;activeSnap=null;}
+function end(){dragging=null;}
 
 canvas.addEventListener("mousedown",start);
 canvas.addEventListener("mousemove",move);
@@ -147,93 +129,78 @@ canvas.addEventListener("touchstart",start,{passive:false});
 canvas.addEventListener("touchmove",move,{passive:false});
 canvas.addEventListener("touchend",end);
 
-/* ---------- Backspace ---------- */
+/* ===== Backspace 刪球 ===== */
 addEventListener("keydown",e=>{
   if(e.key==="Backspace" && balls.length){
-    balls.pop();e.preventDefault();
+    balls.pop();
+    e.preventDefault();
   }
 });
 
-/* ---------- 儲存 / 載入 ---------- */
-function saveDesign(){
-  localStorage.setItem("treeDesign",JSON.stringify({
-    balls,ribbons,
-    colors:{
-      leaf:leaf.value,
-      ball:ballColor.value,
-      ribbon:ribbonColor.value,
-      star:star.value,
-      gift:giftColor.value
-    }
-  }));
+/* ===== 儲存系統 ===== */
+const saveInput=document.getElementById("saveName");
+const saveList=document.getElementById("saveList");
+
+function refreshSaveList(){
+  saveList.innerHTML="";
+  Object.keys(localStorage)
+    .filter(k=>k.startsWith("tree_"))
+    .forEach(k=>{
+      const opt=document.createElement("option");
+      opt.value=k;
+      opt.textContent=k.replace("tree_","");
+      saveList.appendChild(opt);
+    });
 }
-function loadDesign(){
-  const d=JSON.parse(localStorage.getItem("treeDesign"));
-  if(!d) return;
-  balls.length=0;d.balls.forEach(b=>balls.push(b));
-  d.ribbons.forEach((r,i)=>ribbons[i].y=r.y);
-  leaf.value=d.colors.leaf;
-  ballColor.value=d.colors.ball;
-  ribbonColor.value=d.colors.ribbon;
-  star.value=d.colors.star;
-  giftColor.value=d.colors.gift;
+refreshSaveList();
+
+function saveDesign(){
+  const name=saveInput.value.trim();
+  if(!name){alert("請輸入存檔名稱");return;}
+  localStorage.setItem("tree_"+name,JSON.stringify({
+    balls,ribbons
+  }));
+  refreshSaveList();
 }
 
-/* ---------- 畫圖 ---------- */
-function leafLayer(y,w,h,c){
-  ctx.fillStyle=c;
+function loadDesign(){
+  if(!saveList.value)return;
+  const data=JSON.parse(localStorage.getItem(saveList.value));
+  balls.length=0;
+  data.balls.forEach(b=>balls.push(b));
+  data.ribbons.forEach((r,i)=>ribbons[i].y=r.y);
+}
+
+function deleteDesign(){
+  if(!saveList.value)return;
+  localStorage.removeItem(saveList.value);
+  refreshSaveList();
+}
+
+/* ===== 畫圖 ===== */
+function leafLayer(y,w,h){
+  ctx.fillStyle="#1f6b45";
   ctx.beginPath();
   ctx.moveTo(CX()-w/2,y);
   ctx.quadraticCurveTo(CX(),y-h,CX()+w/2,y);
   ctx.quadraticCurveTo(CX(),y+h*0.7,CX()-w/2,y);
   ctx.fill();
 }
-function drawBow(x,y,c){
-  ctx.fillStyle=c;
-  ctx.beginPath();ctx.ellipse(x-6,y,6,4,0,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.ellipse(x+6,y,6,4,0,0,Math.PI*2);ctx.fill();
-  ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
-}
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // 吸附線
-  if(activeSnap){
-    ctx.strokeStyle="rgba(255,255,255,.4)";
-    ctx.beginPath();
-    ctx.moveTo(CX()-200,activeSnap);
-    ctx.lineTo(CX()+200,activeSnap);
-    ctx.stroke();
-  }
-
-  // 星星
-  starPulse+=dir;
-  if(starPulse>1.25||starPulse<0.8)dir*=-1;
-  ctx.save();
-  ctx.translate(CX(),155);
-  ctx.scale(starPulse,starPulse);
-  ctx.fillStyle=star.value;
-  ctx.beginPath();
-  for(let i=0;i<5;i++){
-    ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*14,
-               -Math.sin((18+i*72)*Math.PI/180)*14);
-    ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*6,
-               -Math.sin((54+i*72)*Math.PI/180)*6);
-  }
-  ctx.fill();ctx.restore();
 
   // 樹幹
   ctx.fillStyle="#8b5a2b";
   ctx.fillRect(CX()-18,300,36,160);
 
   // 樹葉
-  leafLayer(190,160,50,leaf.value);
-  leafLayer(245,230,65,leaf.value);
-  leafLayer(310,300,80,leaf.value);
+  leafLayer(190,160,50);
+  leafLayer(245,230,65);
+  leafLayer(310,300,80);
 
   // 彩帶
-  ctx.strokeStyle=ribbonColor.value;
+  ctx.strokeStyle="#d4af37";
   ctx.lineWidth=4;
   ribbons.forEach(r=>{
     ctx.beginPath();
@@ -244,17 +211,10 @@ function draw(){
 
   // 小球
   balls.forEach(b=>{
-    ctx.fillStyle=ballColor.value;
+    ctx.fillStyle="#c0392b";
     ctx.beginPath();
     ctx.arc(CX()+b.x,b.y,b.r,0,Math.PI*2);
     ctx.fill();
-  });
-
-  // 禮物
-  gifts.forEach(g=>{
-    ctx.fillStyle=giftColor.value;
-    ctx.fillRect(CX()+g.x-g.w/2,g.y,g.w,g.h);
-    drawBow(CX()+g.x,g.y-4,ribbonColor.value);
   });
 
   // 雪
