@@ -23,10 +23,7 @@ body{
   font-size:14px;
 }
 .controls label{display:block;margin-top:6px}
-.controls input,.controls select{
-  width:100%;
-  margin-top:4px;
-}
+.controls input,.controls select{width:100%}
 button{
   margin-top:6px;
   padding:6px 10px;
@@ -44,15 +41,13 @@ button{
   <strong>🎄 裝飾聖誕樹</strong>
 
   <label>存檔名稱
-    <input id="saveName" placeholder="例如：我的第一棵樹">
+    <input id="saveName" placeholder="例如：我的聖誕樹">
   </label>
-
   <button onclick="saveDesign()">💾 儲存</button>
 
   <label>選擇存檔
     <select id="saveList"></select>
   </label>
-
   <button onclick="loadDesign()">▶️ 載入</button>
   <button onclick="deleteDesign()">🗑 刪除</button>
 </div>
@@ -67,8 +62,9 @@ function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
 resize();addEventListener("resize",resize);
 const CX=()=>canvas.width/2;
 
-/* ===== 物件 ===== */
+/* ===== 資料 ===== */
 const balls=[];
+const gifts=[];
 const ribbons=[
   {y:215,w:90},
   {y:255,w:120},
@@ -96,6 +92,15 @@ function getPos(e){
 function start(e){
   const {x,y}=getPos(e);
 
+  // 禮物
+  for(let i=gifts.length-1;i>=0;i--){
+    const g=gifts[i];
+    if(x>g.x && x<g.x+g.w && y>g.y && y<g.y+g.h){
+      dragging=g;dragging.type="gift";return;
+    }
+  }
+
+  // 彩帶
   for(let i=ribbons.length-1;i>=0;i--){
     const r=ribbons[i];
     if(Math.abs(y-r.y)<10 && Math.abs(x-CX())<r.w){
@@ -103,6 +108,7 @@ function start(e){
     }
   }
 
+  // 小球
   for(let i=balls.length-1;i>=0;i--){
     const b=balls[i];
     if(Math.hypot(x-(CX()+b.x),y-b.y)<b.r){
@@ -110,14 +116,20 @@ function start(e){
     }
   }
 
-  balls.push({x:x-CX(),y:y,r:9});
+  // 新增：點下方新增禮物，其餘新增小球
+  if(y>360){
+    gifts.push({x:x-20,y:y-15,w:40,h:30});
+  }else{
+    balls.push({x:x-CX(),y:y,r:9});
+  }
 }
 
 function move(e){
   if(!dragging)return;
   const {x,y}=getPos(e);
-  dragging.y=y;
-  if(dragging.type==="ball") dragging.x=x-CX();
+  if(dragging.type==="ball"){dragging.x=x-CX();dragging.y=y;}
+  if(dragging.type==="ribbon") dragging.y=y;
+  if(dragging.type==="gift"){dragging.x=x-20;dragging.y=y-15;}
   e.preventDefault();
 }
 function end(){dragging=null;}
@@ -129,10 +141,11 @@ canvas.addEventListener("touchstart",start,{passive:false});
 canvas.addEventListener("touchmove",move,{passive:false});
 canvas.addEventListener("touchend",end);
 
-/* ===== Backspace 刪球 ===== */
+/* ===== 刪除 ===== */
 addEventListener("keydown",e=>{
-  if(e.key==="Backspace" && balls.length){
-    balls.pop();
+  if(e.key==="Backspace"){
+    if(gifts.length) gifts.pop();
+    else if(balls.length) balls.pop();
     e.preventDefault();
   }
 });
@@ -146,10 +159,9 @@ function refreshSaveList(){
   Object.keys(localStorage)
     .filter(k=>k.startsWith("tree_"))
     .forEach(k=>{
-      const opt=document.createElement("option");
-      opt.value=k;
-      opt.textContent=k.replace("tree_","");
-      saveList.appendChild(opt);
+      const o=document.createElement("option");
+      o.value=k;o.textContent=k.replace("tree_","");
+      saveList.appendChild(o);
     });
 }
 refreshSaveList();
@@ -158,17 +170,18 @@ function saveDesign(){
   const name=saveInput.value.trim();
   if(!name){alert("請輸入存檔名稱");return;}
   localStorage.setItem("tree_"+name,JSON.stringify({
-    balls,ribbons
+    balls,gifts,ribbons
   }));
   refreshSaveList();
 }
 
 function loadDesign(){
   if(!saveList.value)return;
-  const data=JSON.parse(localStorage.getItem(saveList.value));
-  balls.length=0;
-  data.balls.forEach(b=>balls.push(b));
-  data.ribbons.forEach((r,i)=>ribbons[i].y=r.y);
+  const d=JSON.parse(localStorage.getItem(saveList.value));
+  balls.length=0;gifts.length=0;
+  d.balls.forEach(b=>balls.push(b));
+  d.gifts.forEach(g=>gifts.push(g));
+  d.ribbons.forEach((r,i)=>ribbons[i].y=r.y);
 }
 
 function deleteDesign(){
@@ -185,6 +198,12 @@ function leafLayer(y,w,h){
   ctx.quadraticCurveTo(CX(),y-h,CX()+w/2,y);
   ctx.quadraticCurveTo(CX(),y+h*0.7,CX()-w/2,y);
   ctx.fill();
+}
+function drawBow(x,y){
+  ctx.fillStyle="#ffd86b";
+  ctx.beginPath();ctx.ellipse(x-6,y,6,4,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(x+6,y,6,4,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
 }
 
 function draw(){
@@ -215,6 +234,13 @@ function draw(){
     ctx.beginPath();
     ctx.arc(CX()+b.x,b.y,b.r,0,Math.PI*2);
     ctx.fill();
+  });
+
+  // 禮物
+  gifts.forEach(g=>{
+    ctx.fillStyle="#ff6fae";
+    ctx.fillRect(g.x,g.y,g.w,g.h);
+    drawBow(g.x+g.w/2,g.y-4);
   });
 
   // 雪
