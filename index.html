@@ -1,295 +1,302 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<title>🎄 聖誕樹設計器</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<title>裝飾聖誕樹</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
-body{
+html,body{
   margin:0;
+  padding:0;
   background:#0b1d3a;
   overflow:hidden;
   font-family:system-ui,-apple-system,sans-serif;
-  color:white;
+  color:#fff;
 }
 canvas{display:block}
 
-/* 左側控制 */
-.controls{
+/* 左側面板 */
+.panel{
   position:fixed;
-  left:20px;
-  top:20px;
-  width:240px;
-  background:rgba(20,30,50,.88);
-  padding:16px;
+  left:16px;
+  top:16px;
+  width:230px;
+  background:rgba(20,30,50,.9);
   border-radius:16px;
+  padding:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
   z-index:10;
+  font-size:14px;
 }
-.controls h3{margin:10px 0 6px;font-size:15px}
-.controls label{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:13px;
-  margin:6px 0
-}
-.controls input[type=color]{width:40px;height:24px;border:none}
-.controls button,select{
+.panel h3{margin:0 0 8px;font-size:16px}
+.row{display:flex;align-items:center;margin:6px 0}
+.row span{width:90px}
+.row input{flex:1}
+
+button,select,input[type=text]{
   width:100%;
   margin-top:6px;
   padding:6px;
   border-radius:8px;
   border:none;
-  cursor:pointer;
+  box-sizing:border-box;
 }
+button{background:#ffd86b;cursor:pointer}
+.small{font-size:12px;opacity:.85}
 
 /* 右上 */
 .top-right{
   position:fixed;
-  right:20px;
-  top:20px;
+  right:16px;
+  top:16px;
+  display:flex;
+  gap:8px;
   z-index:10;
 }
-.top-right button{
-  margin-left:6px;
+.icon-btn{
   padding:6px 10px;
   border-radius:8px;
   border:none;
   cursor:pointer;
 }
 
-/* 使用說明視窗 */
-.modal{
+/* 使用說明 */
+.help{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.6);
+  background:rgba(0,0,0,.5);
   display:none;
   align-items:center;
   justify-content:center;
-  z-index:99;
+  z-index:20;
 }
-.modal-content{
-  background:#1b2b4a;
-  width:min(90%,520px);
-  max-height:80vh;
-  overflow:auto;
-  padding:20px;
+.help .box{
+  background:#fff;
+  color:#000;
+  max-width:520px;
   border-radius:16px;
-  box-shadow:0 10px 30px rgba(0,0,0,.6);
-}
-.modal-content h2{
-  margin-top:0;
-  text-align:center;
-}
-.modal-content ul{
-  padding-left:18px;
-  line-height:1.7;
-}
-.close{
-  text-align:center;
-  margin-top:12px;
-}
-.close button{
-  padding:6px 16px;
-  border-radius:8px;
-  border:none;
-  cursor:pointer;
+  padding:20px;
 }
 </style>
 </head>
-
 <body>
 
-<!-- 左側 -->
-<div class="controls">
+<div class="panel">
   <h3>🎨 顏色設定</h3>
-  <label>🌲 樹葉 <input type="color" id="leaf"></label>
-  <label>🎀 彩帶 <input type="color" id="ribbon"></label>
-  <label>🔴 小球 <input type="color" id="ball"></label>
-  <label>🎁 禮物 <input type="color" id="gift"></label>
-  <label>⭐ 星星 <input type="color" id="star"></label>
+  <div class="row"><span>🌲 樹葉</span><input type="color" id="leafColor" value="#1f6b45"></div>
+  <div class="row"><span>🎀 彩帶</span><input type="color" id="ribbonColor" value="#d4af37"></div>
+  <div class="row"><span>🔴 小球</span><input type="color" id="ballColor" value="#c0392b"></div>
+  <div class="row"><span>🎁 禮物</span><input type="color" id="giftColor" value="#ff6fae"></div>
+  <div class="row"><span>⭐ 星星</span><input type="color" id="starColor" value="#fff2a8"></div>
 
-  <h3>🎁 禮物</h3>
   <button id="addGift">➕ 新增禮物</button>
 
-  <h3>📸 匯出</h3>
-  <button onclick="exportPNG()">📸 匯出 PNG</button>
+  <hr <br>
+  <input type="text" id="saveName" placeholder="存檔名稱">
+  <button id="saveBtn">💾 儲存設計</button>
+  <select id="saveList"></select>
+  <button id="loadBtn">📂 載入設計</button>
+
+  <button id="exportBtn">📸 匯出 PNG</button>
+
+  <div class="small">點畫面新增小球<br>Delete / Backspace 刪除</div>
 </div>
 
-<!-- 右上 -->
 <div class="top-right">
-  <button onclick="undo()">↶</button>
-  <button onclick="redoFn()">↷</button>
-  <button onclick="openHelp()">📘 使用說明</button>
+  <button class="icon-btn" id="helpBtn">使用說明</button>
 </div>
 
-<!-- 使用說明 -->
-<div class="modal" id="helpModal">
-  <div class="modal-content">
-    <h2>🎄 聖誕樹設計器－使用說明</h2>
+<div class="help" id="help">
+  <div class="box">
+    <h2>🎄 使用說明</h2>
     <ul>
-      <li><b>新增小球：</b>在樹上任意位置點一下</li>
-      <li><b>新增禮物：</b>點擊「➕ 新增禮物」</li>
-      <li><b>拖曳物件：</b>滑鼠或手指直接拖</li>
-      <li><b>選取物件：</b>點一下會出現藍色選取框</li>
-      <li><b>刪除物件：</b>選取後按 Delete / Backspace</li>
-      <li><b>彩帶吸附：</b>拖曳時出現輔助線，放手自動對齊</li>
-      <li><b>復原 / 重做：</b>Ctrl+Z / Ctrl+Y 或右上按鈕</li>
-      <li><b>顏色調整：</b>左側色票即時改變</li>
-      <li><b>匯出圖片：</b>點「📸 匯出 PNG」</li>
+      <li>點畫面任意處新增小球</li>
+      <li>拖曳移動裝飾</li>
+      <li>Delete / Backspace 刪除選取物件</li>
+      <li>可儲存多個設計並載入</li>
     </ul>
-    <div class="close">
-      <button onclick="closeHelp()">關閉</button>
-    </div>
+    <button onclick="help.style.display='none'">關閉</button>
   </div>
 </div>
 
 <canvas id="c"></canvas>
 
 <script>
-const canvas=c,ctx=c.getContext("2d");
-const CX=()=>canvas.width/2;
+/* ===== Canvas ===== */
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
 function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
-resize();addEventListener("resize",resize);
+addEventListener('resize',resize);resize();
 
-// 說明視窗
-function openHelp(){helpModal.style.display="flex"}
-function closeHelp(){helpModal.style.display="none"}
+const CX=()=>canvas.width/2;
+const treeTop=150;
+const layerGap=75;
 
-// 顏色
-const colors={leaf:"#1f6b45",ribbon:"#d4af37",ball:"#c0392b",gift:"#ff6fae",star:"#fff2a8"};
-Object.keys(colors).forEach(k=>{
-  const e=document.getElementById(k);
-  e.value=colors[k];
-  e.oninput=()=>colors[k]=e.value;
-});
+/* ===== 狀態 ===== */
+let balls=[], gifts=[];
+let ribbons=[
+  {y:treeTop+layerGap},
+  {y:treeTop+layerGap*2},
+  {y:treeTop+layerGap*3}
+];
 
-// 資料
-let balls=[],ribbons=[{y:260},{y:310},{y:360}],gifts=[];
-let selected=null,dragging=null;
+/* ❄️ 雪 */
+const snow=Array.from({length:160},()=>({
+  x:Math.random()*canvas.width,
+  y:Math.random()*canvas.height,
+  r:Math.random()*2+1,
+  s:Math.random()*0.4+0.2
+}));
 
-// 歷史
-let history=[],redo=[];
-function saveState(){history.push(JSON.stringify({balls,ribbons,gifts,colors}));redo=[]}
-saveState();
+/* ⭐ 星星動畫 */
+let starTime=0;
 
-// 操作
-canvas.onmousedown=e=>down(e.offsetX,e.offsetY);
-canvas.onmousemove=e=>move(e.offsetX,e.offsetY);
-canvas.onmouseup=()=>dragging=null;
-
-function down(x,y){
-  selected=null;
-  balls.forEach(o=>{if(Math.hypot(x-(CX()+o.x),y-o.y)<o.r+6){selected=o;dragging=o}});
-  gifts.forEach(o=>{if(x> CX()+o.x-20&&x<CX()+o.x+20&&y>o.y&&y<o.y+30){selected=o;dragging=o}});
-  ribbons.forEach(o=>{if(Math.abs(y-o.y)<10){selected=o;dragging=o}});
-  if(!selected && y>200&&y<380){
-    balls.push({x:x-CX(),y,r:9});
-    saveState();
+/* ===== 儲存 / 載入 ===== */
+function getState(){
+  return {
+    balls,
+    gifts,
+    ribbons,
+    colors:{
+      leaf:leafColor.value,
+      ribbon:ribbonColor.value,
+      ball:ballColor.value,
+      gift:giftColor.value,
+      star:starColor.value
+    }
+  };
+}
+function setState(s){
+  balls=s.balls||[];
+  gifts=s.gifts||[];
+  ribbons=s.ribbons||ribbons;
+  if(s.colors){
+    leafColor.value=s.colors.leaf;
+    ribbonColor.value=s.colors.ribbon;
+    ballColor.value=s.colors.ball;
+    giftColor.value=s.colors.gift;
+    starColor.value=s.colors.star;
   }
 }
 
-function move(x,y){
-  if(!dragging)return;
-  if("r" in dragging){dragging.x=x-CX();dragging.y=y}
-  else dragging.y=Math.round(y/10)*10;
-}
-
-// 鍵盤
-addEventListener("keydown",e=>{
-  if((e.key==="Delete"||e.key==="Backspace")&&selected){
-    [balls,ribbons,gifts].forEach(a=>{
-      const i=a.indexOf(selected);if(i>-1)a.splice(i,1)
+function refreshSaveList(){
+  saveList.innerHTML='';
+  Object.keys(localStorage)
+    .filter(k=>k.startsWith('tree_'))
+    .forEach(k=>{
+      const opt=document.createElement('option');
+      opt.value=k;
+      opt.textContent=k.replace('tree_','');
+      saveList.appendChild(opt);
     });
-    selected=null;saveState();
+}
+refreshSaveList();
+
+saveBtn.onclick=()=>{
+  const name=saveName.value.trim();
+  if(!name)return alert('請輸入存檔名稱');
+  localStorage.setItem('tree_'+name,JSON.stringify(getState()));
+  refreshSaveList();
+};
+
+loadBtn.onclick=()=>{
+  const key=saveList.value;
+  if(!key)return;
+  setState(JSON.parse(localStorage.getItem(key)));
+};
+
+/* ===== 互動 ===== */
+canvas.onclick=e=>{
+  balls.push({x:e.offsetX,y:e.offsetY});
+};
+
+addGift.onclick=()=>{
+  gifts.push({x:CX(),y:treeTop+layerGap*4});
+};
+
+/* ===== 五角星 ===== */
+function drawStar(cx,cy,outer,inner){
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+    const r=i%2===0?outer:inner;
+    const a=Math.PI/2+i*Math.PI/5;
+    ctx.lineTo(cx+Math.cos(a)*r,cy-Math.sin(a)*r);
   }
-  if(e.ctrlKey&&e.key==="z")undo();
-  if(e.ctrlKey&&e.key==="y")redoFn();
-});
-
-function undo(){if(history.length<2)return;redo.push(history.pop());load(history.at(-1))}
-function redoFn(){if(!redo.length)return;const s=redo.pop();history.push(s);load(s)}
-function load(s){const d=JSON.parse(s);balls=d.balls;ribbons=d.ribbons;gifts=d.gifts;Object.assign(colors,d.colors)}
-
-addGift.onclick=()=>{gifts.push({x:0,y:460});saveState()};
-
-// 匯出
-function exportPNG(){
-  const a=document.createElement("a");
-  a.download="christmas-tree.png";
-  a.href=canvas.toDataURL();
-  a.click();
+  ctx.closePath();
+  ctx.fill();
 }
 
-// 雪
-const snow=Array.from({length:150},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*2+1,s:Math.random()*0.6+0.3}));
-
-function leafLayer(y,w,h){
-  ctx.fillStyle=colors.leaf;
-  ctx.beginPath();
-  ctx.moveTo(CX()-w/2,y);
-  ctx.quadraticCurveTo(CX(),y-h,CX()+w/2,y);
-  ctx.quadraticCurveTo(CX(),y+h*0.7,CX()-w/2,y);
-  ctx.fill();
+/* ===== 繪製 ===== */
+function drawTree(){
+  ctx.fillStyle=leafColor.value;
+  [0,1,2].forEach(i=>{
+    const y=treeTop+i*layerGap;
+    const w=220+i*90;
+    ctx.beginPath();
+    ctx.moveTo(CX()-w/2,y);
+    ctx.quadraticCurveTo(CX(),y-55,CX()+w/2,y);
+    ctx.quadraticCurveTo(CX(),y+55,CX()-w/2,y);
+    ctx.fill();
+  });
+  ctx.fillStyle='#8b5a2b';
+  ctx.fillRect(CX()-22,treeTop+layerGap*3-20,44,110);
 }
 
 function draw(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // 星星
-  ctx.fillStyle=colors.star;
-  ctx.beginPath();
-  ctx.arc(CX(),150,10,0,Math.PI*2);
-  ctx.fill();
-
-  // 樹
-  leafLayer(200,220,60);
-  leafLayer(255,280,70);
-  leafLayer(320,340,80);
-
-  // 彩帶
-  ctx.strokeStyle=colors.ribbon;
-  ctx.lineWidth=4;
-  ribbons.forEach(r=>{
+  /* 雪 */
+  ctx.fillStyle='white';
+  snow.forEach(s=>{
+    s.y+=s.s;
+    if(s.y>canvas.height){s.y=-5;s.x=Math.random()*canvas.width}
     ctx.beginPath();
-    ctx.moveTo(CX()-160,r.y);
-    ctx.quadraticCurveTo(CX(),r.y-20,CX()+160,r.y);
-    ctx.stroke();
-  });
-
-  // 小球
-  balls.forEach(b=>{
-    ctx.fillStyle=colors.ball;
-    ctx.beginPath();
-    ctx.arc(CX()+b.x,b.y,b.r,0,Math.PI*2);
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
     ctx.fill();
   });
 
-  // 禮物
+  /* 星星 */
+  starTime+=0.03;
+  ctx.save();
+  ctx.fillStyle=starColor.value;
+  ctx.shadowColor=starColor.value;
+  ctx.shadowBlur=12+Math.sin(starTime)*6;
+  drawStar(CX(),treeTop-30,16,7);
+  ctx.restore();
+
+  drawTree();
+
+  ctx.strokeStyle=ribbonColor.value;
+  ribbons.forEach(r=>{
+    ctx.beginPath();
+    ctx.moveTo(CX()-160,r.y);
+    ctx.quadraticCurveTo(CX(),r.y-22,CX()+160,r.y);
+    ctx.stroke();
+  });
+
+  ctx.fillStyle=ballColor.value;
+  balls.forEach(b=>{
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,8,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  ctx.fillStyle=giftColor.value;
   gifts.forEach(g=>{
-    ctx.fillStyle=colors.gift;
-    ctx.fillRect(CX()+g.x-20,g.y,40,30);
+    ctx.fillRect(g.x-16,g.y-16,32,32);
   });
-
-  // 雪
-  ctx.fillStyle="white";
-  snow.forEach(s=>{
-    s.y+=s.s;if(s.y>canvas.height)s.y=0;
-    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
-  });
-
-  // 選取框
-  if(selected){
-    ctx.strokeStyle="#00ffff";
-    ctx.strokeRect(
-      selected.x?CX()+selected.x-12:CX()-170,
-      selected.y-12,24,24
-    );
-  }
 
   requestAnimationFrame(draw);
 }
 draw();
+
+helpBtn.onclick=()=>help.style.display='flex';
+exportBtn.onclick=()=>{
+  const a=document.createElement('a');
+  a.download='tree.png';
+  a.href=canvas.toDataURL();
+  a.click();
+};
 </script>
 </body>
 </html>
