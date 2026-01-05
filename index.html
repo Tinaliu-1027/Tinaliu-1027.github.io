@@ -3,234 +3,300 @@
 <head>
 <meta charset="UTF-8">
 <title>🎄 聖誕樹裝飾</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html,body{margin:0;height:100%;background:#081b3a;font-family:sans-serif}
+body{
+  margin:0;
+  background:#0b1d3a;
+  overflow:hidden;
+  font-family:system-ui;
+  color:white;
+}
 canvas{display:block}
-#panel{
-  position:fixed;left:12px;top:12px;
-  background:#0f223f;color:#fff;
-  padding:12px;border-radius:12px;
-  width:210px;font-size:14px
+
+/* 左側控制面板 */
+.controls{
+  position:fixed;
+  left:20px;
+  top:20px;
+  background:rgba(20,30,50,.9);
+  padding:14px;
+  border-radius:14px;
+  z-index:10;
+  font-size:14px;
+  width:230px;
 }
-#panel h3{margin:0 0 6px}
-#panel label{display:flex;align-items:center;margin:4px 0}
-#panel span{flex:1}
-#panel input[type=color]{width:48px;height:28px;border:none}
-button,select{
-  width:100%;margin-top:6px;
-  padding:6px;border-radius:6px;border:none;
-  cursor:pointer
+.controls label{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:8px;
 }
-#topbar{
-  position:fixed;right:12px;top:12px;display:flex;gap:6px
+.controls button, .controls select{
+  width:100%;
+  margin-top:8px;
+  padding:6px;
+  border-radius:8px;
+  border:none;
 }
-#topbar button{padding:6px 10px;border-radius:8px}
-#help{
-  position:fixed;inset:0;background:rgba(0,0,0,.5);
-  display:none;align-items:center;justify-content:center
+
+/* 右上角說明按鈕 */
+.helpBtn{
+  position:fixed;
+  right:20px;
+  top:20px;
+  z-index:20;
+  padding:8px 14px;
+  border-radius:20px;
+  border:none;
+  background:#ffd966;
+  color:#333;
+  font-weight:bold;
+  cursor:pointer;
 }
-#helpBox{
-  background:#fff;color:#000;
-  padding:20px;border-radius:12px;
-  width:420px;max-width:90%
+
+/* 使用說明視窗 */
+.helpOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:30;
+}
+.helpBox{
+  background:#1e2a4a;
+  max-width:420px;
+  width:90%;
+  padding:20px;
+  border-radius:16px;
+  line-height:1.6;
+}
+.helpBox h2{
+  margin-top:0;
+}
+.helpBox button{
+  margin-top:14px;
+  width:100%;
+  padding:8px;
+  border:none;
+  border-radius:10px;
+  background:#ffd966;
+  font-weight:bold;
 }
 </style>
 </head>
+
 <body>
 
-<canvas id="c"></canvas>
+<button class="helpBtn" id="helpBtn">📖 使用說明</button>
 
-<div id="panel">
-  <h3>🎨 顏色設定</h3>
-  <label><span>🌲 樹葉</span><input type="color" id="cTree" value="#1f6b3a"></label>
-  <label><span>🎀 彩帶</span><input type="color" id="cRibbon" value="#e1b63b"></label>
-  <label><span>🔴 小球</span><input type="color" id="cBall" value="#c93b2b"></label>
-  <label><span>🎁 禮物</span><input type="color" id="cGift" value="#ff77aa"></label>
-  <label><span>⭐ 星星</span><input type="color" id="cStar" value="#ffeaa0"></label>
+<div class="controls">
+  <strong>🎨 顏色設定</strong>
+  <label>🌲 樹葉 <input type="color" id="leaf"></label>
+  <label>🎀 彩帶 <input type="color" id="ribbon"></label>
+  <label>🔴 小球 <input type="color" id="ball"></label>
+  <label>⭐ 星星 <input type="color" id="star"></label>
 
-  <button id="addGift">➕ 新增禮物</button>
+  <hr style="margin:10px 0;opacity:.3">
 
-  <select id="slot"></select>
-  <button id="save">💾 儲存</button>
-  <button id="load">📂 載入</button>
-  <button id="export">📸 匯出 PNG</button>
+  <strong>🔄 操作</strong>
+  <button id="undoBtn">↶ 復原</button>
+  <button id="redoBtn">↷ 重做</button>
+
+  <hr style="margin:10px 0;opacity:.3">
+
+  <strong>💾 儲存 / 載入</strong>
+  <select id="slot">
+    <option value="1">存檔 1</option>
+    <option value="2">存檔 2</option>
+    <option value="3">存檔 3</option>
+  </select>
+  <button id="saveBtn">💾 儲存</button>
+  <button id="loadBtn">📂 載入</button>
 </div>
 
-<div id="topbar">
-  <button id="undo">↶</button>
-  <button id="redo">↷</button>
-  <button id="helpBtn">❓ 使用說明</button>
-</div>
-
-<div id="help">
-  <div id="helpBox">
-    <h2>📖 使用說明</h2>
+<!-- 使用說明 -->
+<div class="helpOverlay" id="helpOverlay">
+  <div class="helpBox">
+    <h2>🎄 聖誕樹使用說明</h2>
     <ul>
-      <li>點畫面：新增小球</li>
-      <li>拖曳彩帶：可上下移動（有吸附線）</li>
-      <li>點選物件 + Backspace：刪除</li>
-      <li>Ctrl+Z / Ctrl+Y：復原 / 重做</li>
-      <li>儲存 / 載入：會記住所有位置與顏色</li>
+      <li>🖱 點畫面任意位置：新增小球</li>
+      <li>🖐 拖曳小球 / 彩帶：自由移動</li>
+      <li>🎀 彩帶靠近樹葉：會出現吸附線</li>
+      <li>🎨 左側可調整所有顏色</li>
+      <li>🔄 復原 / 重做：按鈕或 Ctrl + Z / Y</li>
+      <li>💾 儲存 / 載入：可使用多個存檔</li>
+      <li>❄ 雪花會自動飄動（不用操作）</li>
     </ul>
-    <button onclick="help.style.display='none'">關閉</button>
+    <button id="closeHelp">我知道了</button>
   </div>
 </div>
 
-<script>
-const canvas=c=document.getElementById('c'),ctx=c.getContext('2d');
-resize();window.onresize=resize;
-function resize(){c.width=innerWidth;c.height=innerHeight}
+<canvas id="c"></canvas>
 
-const COLORS={
-  tree:cTree.value,ribbon:cRibbon.value,ball:cBall.value,
-  gift:cGift.value,star:cStar.value
+<script>
+/* Canvas */
+const canvas=document.getElementById("c");
+const ctx=canvas.getContext("2d");
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
+resize();addEventListener("resize",resize);
+const CX=()=>canvas.width/2;
+
+/* 使用說明 */
+helpBtn.onclick=()=>helpOverlay.style.display="flex";
+closeHelp.onclick=()=>helpOverlay.style.display="none";
+helpOverlay.onclick=e=>{
+  if(e.target===helpOverlay) helpOverlay.style.display="none";
 };
 
-[cTree,cRibbon,cBall,cGift,cStar].forEach(i=>{
-  i.oninput=e=>{COLORS[i.id.slice(1).toLowerCase()]=e.target.value;render();};
+/* 顏色 */
+const COLORS={leaf:"#1f6b45",ribbon:"#d4af37",ball:"#c0392b",star:"#fff2a8"};
+leaf.value=COLORS.leaf;ribbon.value=COLORS.ribbon;
+ball.value=COLORS.ball;star.value=COLORS.star;
+
+/* 資料 */
+const balls=[];
+const ribbons=[{y:260},{y:310},{y:360}];
+const leafCenters=[210,270,340];
+
+/* 雪花 */
+const snow=Array.from({length:120},()=>({
+  x:Math.random()*innerWidth,
+  y:Math.random()*innerHeight,
+  r:Math.random()*2+1,
+  s:Math.random()*0.4+0.2
+}));
+
+/* 星星動畫 */
+let starPulse=1,starDir=0.008;
+
+/* History */
+const history=[],redo=[];
+function saveHistory(){
+  history.push(JSON.stringify({balls,ribbons,colors:COLORS}));
+  if(history.length>100) history.shift();
+  redo.length=0;
+}
+leaf.oninput=e=>{COLORS.leaf=e.target.value;saveHistory();}
+ribbon.oninput=e=>{COLORS.ribbon=e.target.value;saveHistory();}
+ball.oninput=e=>{COLORS.ball=e.target.value;saveHistory();}
+star.oninput=e=>{COLORS.star=e.target.value;saveHistory();}
+
+undoBtn.onclick=()=>{if(history.length>1){redo.push(history.pop());load(history.at(-1));}};
+redoBtn.onclick=()=>{if(redo.length){const s=redo.pop();history.push(s);load(s);}};
+
+addEventListener("keydown",e=>{
+  if(e.ctrlKey&&e.key==="z"){e.preventDefault();undoBtn.onclick();}
+  if(e.ctrlKey&&(e.key==="y"||(e.shiftKey&&e.key==="Z"))){e.preventDefault();redoBtn.onclick();}
 });
 
-let balls=[],gifts=[];
-let ribbons=[{y:-80},{y:0},{y:80}];
-let history=[],redoStack=[],selected=null;
-
-function snapshot(){
-  history.push(JSON.stringify({balls,gifts,ribbons,COLORS}));
-  redoStack=[];
-}
-
-function restore(s){
+function load(s){
   const d=JSON.parse(s);
-  balls=d.balls;gifts=d.gifts;ribbons=d.ribbons;
-  Object.assign(COLORS,d.COLORS);
-  render();
+  balls.length=0;d.balls.forEach(b=>balls.push(b));
+  ribbons.length=0;d.ribbons.forEach(r=>ribbons.push(r));
+  Object.assign(COLORS,d.colors);
+  leaf.value=COLORS.leaf;ribbon.value=COLORS.ribbon;
+  ball.value=COLORS.ball;star.value=COLORS.star;
 }
 
+/* 拖曳 */
+let drag=null,type=null,snap=null;
+canvas.onmousedown=e=>{
+  const x=e.offsetX,y=e.offsetY;
+  drag=null;snap=null;
+  ribbons.forEach(r=>{if(Math.abs(y-r.y)<10){drag=r;type="r";}});
+  balls.forEach(b=>{
+    if(Math.hypot(x-(CX()+b.x),y-b.y)<10){drag=b;type="b";}
+  });
+  if(!drag){balls.push({x:x-CX(),y});saveHistory();}
+};
+canvas.onmousemove=e=>{
+  if(!drag)return;
+  if(type==="b"){drag.x=e.offsetX-CX();drag.y=e.offsetY;}
+  if(type==="r"){
+    drag.y=e.offsetY;snap=null;
+    leafCenters.forEach(c=>{if(Math.abs(drag.y-c)<12)snap=c;});
+  }
+};
+canvas.onmouseup=()=>{
+  if(type==="r"&&snap!==null)drag.y=snap;
+  if(drag)saveHistory();
+  drag=null;type=null;snap=null;
+};
+
+/* Update / Render */
+function update(){
+  snow.forEach(s=>{s.y+=s.s;if(s.y>canvas.height)s.y=-5;});
+  starPulse+=starDir;
+  if(starPulse>1.25||starPulse<0.85)starDir*=-1;
+}
 function render(){
-  ctx.clearRect(0,0,c.width,c.height);
-  drawSnow();
-  drawTree();
-  drawRibbons();
-  drawBalls();
-  drawGifts();
-  drawStar();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawStar();drawLeaves();drawRibbons();drawBalls();drawSnow();
 }
-
-function drawTree(){
-  ctx.fillStyle=COLORS.tree;
-  [120,80,40].forEach((w,i)=>{
+function drawStar(){
+  ctx.save();
+  ctx.translate(CX(),150);
+  ctx.scale(starPulse,starPulse);
+  ctx.fillStyle=COLORS.star;
+  ctx.shadowColor=COLORS.star;
+  ctx.shadowBlur=20;
+  ctx.beginPath();
+  for(let i=0;i<5;i++){
+    ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*18,-Math.sin((18+i*72)*Math.PI/180)*18);
+    ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*8,-Math.sin((54+i*72)*Math.PI/180)*8);
+  }
+  ctx.fill();ctx.restore();
+}
+function drawLeaves(){
+  [[210,60],[270,70],[340,80]].forEach(l=>{
+    ctx.fillStyle=COLORS.leaf;
     ctx.beginPath();
-    ctx.ellipse(c.width/2,200+i*70,w,30,0,0,Math.PI*2);
+    ctx.moveTo(CX()-l[1]/2,l[0]);
+    ctx.quadraticCurveTo(CX(),l[0]-l[1],CX()+l[1]/2,l[0]);
+    ctx.quadraticCurveTo(CX(),l[0]+l[1]*.7,CX()-l[1]/2,l[0]);
     ctx.fill();
   });
-  ctx.fillStyle="#8b5a2b";
-  ctx.fillRect(c.width/2-20,240,40,120);
 }
-
 function drawRibbons(){
-  ctx.strokeStyle=COLORS.ribbon;
-  ctx.lineWidth=6;
+  ctx.strokeStyle=COLORS.ribbon;ctx.lineWidth=8;
   ribbons.forEach(r=>{
     ctx.beginPath();
-    ctx.moveTo(c.width/2-140,200+r.y);
-    ctx.lineTo(c.width/2+140,200+r.y);
+    ctx.moveTo(CX()-160,r.y);
+    ctx.quadraticCurveTo(CX(),r.y-18,CX()+160,r.y);
     ctx.stroke();
   });
 }
-
 function drawBalls(){
   ctx.fillStyle=COLORS.ball;
   balls.forEach(b=>{
     ctx.beginPath();
-    ctx.arc(b.x,b.y,8,0,Math.PI*2);
+    ctx.arc(CX()+b.x,b.y,8,0,Math.PI*2);
+    ctx.fill();
+  });
+}
+function drawSnow(){
+  ctx.fillStyle="white";
+  snow.forEach(s=>{
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
     ctx.fill();
   });
 }
 
-function drawGifts(){
-  gifts.forEach(g=>{
-    ctx.fillStyle=COLORS.gift;
-    ctx.fillRect(g.x-14,g.y-10,28,20);
-    ctx.fillStyle="#ffd966";
-    ctx.fillRect(g.x-2,g.y-10,4,20);
-  });
-}
-
-function drawStar(){
-  const x=c.width/2,y=120,r=14;
-  ctx.fillStyle=COLORS.star;
-  ctx.beginPath();
-  for(let i=0;i<5;i++){
-    ctx.lineTo(
-      x+Math.cos((18+i*72)/180*Math.PI)*r,
-      y-Math.sin((18+i*72)/180*Math.PI)*r
-    );
-    ctx.lineTo(
-      x+Math.cos((54+i*72)/180*Math.PI)*r/2,
-      y-Math.sin((54+i*72)/180*Math.PI)*r/2
-    );
-  }
-  ctx.closePath();ctx.fill();
-}
-
-let snow=[...Array(120)].map(()=>({
-  x:Math.random()*c.width,y:Math.random()*c.height,s:Math.random()*1.5
-}));
-function drawSnow(){
-  ctx.fillStyle="#fff";
-  snow.forEach(f=>{
-    ctx.beginPath();ctx.arc(f.x,f.y,f.s,0,Math.PI*2);ctx.fill();
-    f.y+=0.3;if(f.y>c.height)f.y=0;
-  });
-}
-
-canvas.onclick=e=>{
-  snapshot();
-  balls.push({x:e.offsetX,y:e.offsetY});
-  render();
-};
-
-addGift.onclick=()=>{
-  snapshot();
-  gifts.push({x:c.width/2,y:380});
-  render();
-};
-
-undo.onclick=()=>{if(history.length){redoStack.push(JSON.stringify({balls,gifts,ribbons,COLORS}));restore(history.pop());}};
-redo.onclick=()=>{if(redoStack.length){history.push(JSON.stringify({balls,gifts,ribbons,COLORS}));restore(redoStack.pop());}};
-
-document.onkeydown=e=>{
-  if(e.key==="z"&&e.ctrlKey)undo.onclick();
-  if(e.key==="y"&&e.ctrlKey)redo.onclick();
-};
-
-helpBtn.onclick=()=>help.style.display='flex';
-
-function updateSlots(){
-  slot.innerHTML="";
-  for(let i=0;i<5;i++){
-    const o=document.createElement("option");
-    o.value=i;o.text="存檔 "+(i+1);
-    slot.appendChild(o);
-  }
-}
-updateSlots();
-
-save.onclick=()=>{
-  localStorage.setItem("tree_"+slot.value,JSON.stringify({balls,gifts,ribbons,COLORS}));
-};
-load.onclick=()=>{
+/* 儲存 / 載入 */
+saveBtn.onclick=()=>localStorage.setItem("tree_"+slot.value,history.at(-1));
+loadBtn.onclick=()=>{
   const d=localStorage.getItem("tree_"+slot.value);
-  if(d)restore(d);
+  if(!d)return alert("沒有存檔");
+  history.length=0;history.push(d);load(d);
 };
 
-export.onclick=()=>{
-  const a=document.createElement("a");
-  a.href=c.toDataURL("image/png");
-  a.download="tree.png";a.click();
-};
-
-render();
+/* 啟動 */
+saveHistory();
+(function loop(){update();render();requestAnimationFrame(loop);})();
 </script>
 </body>
 </html>
