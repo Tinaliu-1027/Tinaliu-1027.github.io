@@ -19,12 +19,12 @@ canvas{display:block}
   position:fixed;
   left:20px;
   top:20px;
+  width:250px;
   background:rgba(20,30,50,.9);
   padding:14px;
   border-radius:14px;
   z-index:10;
   font-size:14px;
-  width:230px;
 }
 .controls label{
   display:flex;
@@ -32,271 +32,249 @@ canvas{display:block}
   align-items:center;
   margin-top:8px;
 }
-.controls button, .controls select{
+.controls button{
   width:100%;
   margin-top:8px;
   padding:6px;
   border-radius:8px;
   border:none;
-}
-
-/* 右上角說明按鈕 */
-.helpBtn{
-  position:fixed;
-  right:20px;
-  top:20px;
-  z-index:20;
-  padding:8px 14px;
-  border-radius:20px;
-  border:none;
-  background:#ffd966;
-  color:#333;
-  font-weight:bold;
   cursor:pointer;
 }
-
-/* 使用說明視窗 */
-.helpOverlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:30;
-}
-.helpBox{
-  background:#1e2a4a;
-  max-width:420px;
-  width:90%;
-  padding:20px;
-  border-radius:16px;
-  line-height:1.6;
-}
-.helpBox h2{
-  margin-top:0;
-}
-.helpBox button{
-  margin-top:14px;
-  width:100%;
-  padding:8px;
-  border:none;
-  border-radius:10px;
-  background:#ffd966;
-  font-weight:bold;
-}
+hr{margin:10px 0;opacity:.3}
 </style>
 </head>
 
 <body>
-
-<button class="helpBtn" id="helpBtn">📖 使用說明</button>
 
 <div class="controls">
   <strong>🎨 顏色設定</strong>
   <label>🌲 樹葉 <input type="color" id="leaf"></label>
   <label>🎀 彩帶 <input type="color" id="ribbon"></label>
   <label>🔴 小球 <input type="color" id="ball"></label>
+  <label>🎁 禮物 <input type="color" id="gift"></label>
   <label>⭐ 星星 <input type="color" id="star"></label>
 
-  <hr style="margin:10px 0;opacity:.3">
+  <hr>
 
-  <strong>🔄 操作</strong>
-  <button id="undoBtn">↶ 復原</button>
-  <button id="redoBtn">↷ 重做</button>
-
-  <hr style="margin:10px 0;opacity:.3">
-
-  <strong>💾 儲存 / 載入</strong>
-  <select id="slot">
-    <option value="1">存檔 1</option>
-    <option value="2">存檔 2</option>
-    <option value="3">存檔 3</option>
-  </select>
-  <button id="saveBtn">💾 儲存</button>
-  <button id="loadBtn">📂 載入</button>
-</div>
-
-<!-- 使用說明 -->
-<div class="helpOverlay" id="helpOverlay">
-  <div class="helpBox">
-    <h2>🎄 聖誕樹使用說明</h2>
-    <ul>
-      <li>🖱 點畫面任意位置：新增小球</li>
-      <li>🖐 拖曳小球 / 彩帶：自由移動</li>
-      <li>🎀 彩帶靠近樹葉：會出現吸附線</li>
-      <li>🎨 左側可調整所有顏色</li>
-      <li>🔄 復原 / 重做：按鈕或 Ctrl + Z / Y</li>
-      <li>💾 儲存 / 載入：可使用多個存檔</li>
-      <li>❄ 雪花會自動飄動（不用操作）</li>
-    </ul>
-    <button id="closeHelp">我知道了</button>
-  </div>
+  <strong>🎁 禮物</strong>
+  <button id="addGift">➕ 新增禮物</button>
 </div>
 
 <canvas id="c"></canvas>
 
 <script>
-/* Canvas */
-const canvas=document.getElementById("c");
-const ctx=canvas.getContext("2d");
-function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
-resize();addEventListener("resize",resize);
-const CX=()=>canvas.width/2;
+/* ===== Canvas ===== */
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+function resize(){
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+const CX = () => canvas.width / 2;
 
-/* 使用說明 */
-helpBtn.onclick=()=>helpOverlay.style.display="flex";
-closeHelp.onclick=()=>helpOverlay.style.display="none";
-helpOverlay.onclick=e=>{
-  if(e.target===helpOverlay) helpOverlay.style.display="none";
+/* ===== 顏色 ===== */
+const COLORS = {
+  leaf:"#1f6b45",
+  ribbon:"#d4af37",
+  ball:"#c0392b",
+  gift:"#ff6fae",
+  star:"#fff2a8"
 };
 
-/* 顏色 */
-const COLORS={leaf:"#1f6b45",ribbon:"#d4af37",ball:"#c0392b",star:"#fff2a8"};
-leaf.value=COLORS.leaf;ribbon.value=COLORS.ribbon;
-ball.value=COLORS.ball;star.value=COLORS.star;
+leaf.value   = COLORS.leaf;
+ribbon.value = COLORS.ribbon;
+ball.value   = COLORS.ball;
+gift.value   = COLORS.gift;
+star.value   = COLORS.star;
 
-/* 資料 */
-const balls=[];
-const ribbons=[{y:260},{y:310},{y:360}];
-const leafCenters=[210,270,340];
+leaf.oninput   = e => COLORS.leaf   = e.target.value;
+ribbon.oninput = e => COLORS.ribbon = e.target.value;
+ball.oninput   = e => COLORS.ball   = e.target.value;
+gift.oninput   = e => COLORS.gift   = e.target.value;
+star.oninput   = e => COLORS.star   = e.target.value;
 
-/* 雪花 */
-const snow=Array.from({length:120},()=>({
-  x:Math.random()*innerWidth,
-  y:Math.random()*innerHeight,
-  r:Math.random()*2+1,
-  s:Math.random()*0.4+0.2
+/* ===== 樹葉資料 ===== */
+const leaves = [
+  { y:210, w:220, h:60 },
+  { y:270, w:280, h:70 },
+  { y:340, w:340, h:80 }
+];
+
+/* ===== 彩帶（對應樹葉） ===== */
+const ribbons = [
+  { leaf:0, offset:0 },
+  { leaf:1, offset:0 },
+  { leaf:2, offset:0 }
+];
+
+/* ===== 裝飾 ===== */
+const balls = [];
+const gifts = [];
+
+/* ===== 雪花 ===== */
+const snow = Array.from({length:120}, () => ({
+  x: Math.random() * innerWidth,
+  y: Math.random() * innerHeight,
+  r: Math.random() * 2 + 1,
+  s: Math.random() * 0.4 + 0.2
 }));
 
-/* 星星動畫 */
-let starPulse=1,starDir=0.008;
+/* ===== 星星動畫 ===== */
+let starPulse = 1;
+let starDir = 0.008;
 
-/* History */
-const history=[],redo=[];
-function saveHistory(){
-  history.push(JSON.stringify({balls,ribbons,colors:COLORS}));
-  if(history.length>100) history.shift();
-  redo.length=0;
-}
-leaf.oninput=e=>{COLORS.leaf=e.target.value;saveHistory();}
-ribbon.oninput=e=>{COLORS.ribbon=e.target.value;saveHistory();}
-ball.oninput=e=>{COLORS.ball=e.target.value;saveHistory();}
-star.oninput=e=>{COLORS.star=e.target.value;saveHistory();}
+/* ===== 拖曳 ===== */
+let dragging = null;
+let dragType = null;
 
-undoBtn.onclick=()=>{if(history.length>1){redo.push(history.pop());load(history.at(-1));}};
-redoBtn.onclick=()=>{if(redo.length){const s=redo.pop();history.push(s);load(s);}};
+canvas.onmousedown = e => {
+  const x = e.offsetX;
+  const y = e.offsetY;
+  dragging = null;
 
-addEventListener("keydown",e=>{
-  if(e.ctrlKey&&e.key==="z"){e.preventDefault();undoBtn.onclick();}
-  if(e.ctrlKey&&(e.key==="y"||(e.shiftKey&&e.key==="Z"))){e.preventDefault();redoBtn.onclick();}
-});
-
-function load(s){
-  const d=JSON.parse(s);
-  balls.length=0;d.balls.forEach(b=>balls.push(b));
-  ribbons.length=0;d.ribbons.forEach(r=>ribbons.push(r));
-  Object.assign(COLORS,d.colors);
-  leaf.value=COLORS.leaf;ribbon.value=COLORS.ribbon;
-  ball.value=COLORS.ball;star.value=COLORS.star;
-}
-
-/* 拖曳 */
-let drag=null,type=null,snap=null;
-canvas.onmousedown=e=>{
-  const x=e.offsetX,y=e.offsetY;
-  drag=null;snap=null;
-  ribbons.forEach(r=>{if(Math.abs(y-r.y)<10){drag=r;type="r";}});
-  balls.forEach(b=>{
-    if(Math.hypot(x-(CX()+b.x),y-b.y)<10){drag=b;type="b";}
+  gifts.forEach(g=>{
+    if(x > CX()+g.x-g.w/2 && x < CX()+g.x+g.w/2 &&
+       y > g.y && y < g.y+g.h){
+      dragging = g;
+      dragType = "gift";
+    }
   });
-  if(!drag){balls.push({x:x-CX(),y});saveHistory();}
-};
-canvas.onmousemove=e=>{
-  if(!drag)return;
-  if(type==="b"){drag.x=e.offsetX-CX();drag.y=e.offsetY;}
-  if(type==="r"){
-    drag.y=e.offsetY;snap=null;
-    leafCenters.forEach(c=>{if(Math.abs(drag.y-c)<12)snap=c;});
+
+  balls.forEach(b=>{
+    if(Math.hypot(x-(CX()+b.x), y-b.y) < 10){
+      dragging = b;
+      dragType = "ball";
+    }
+  });
+
+  if(!dragging){
+    balls.push({ x:x-CX(), y });
   }
 };
-canvas.onmouseup=()=>{
-  if(type==="r"&&snap!==null)drag.y=snap;
-  if(drag)saveHistory();
-  drag=null;type=null;snap=null;
+
+canvas.onmousemove = e => {
+  if(!dragging) return;
+  dragging.x = e.offsetX - CX();
+  dragging.y = e.offsetY;
 };
 
-/* Update / Render */
+canvas.onmouseup = () => {
+  dragging = null;
+  dragType = null;
+};
+
+/* ===== 新增禮物 ===== */
+addGift.onclick = () => {
+  gifts.push({ x:0, y:420, w:40, h:30 });
+};
+
+/* ===== Update / Render ===== */
 function update(){
-  snow.forEach(s=>{s.y+=s.s;if(s.y>canvas.height)s.y=-5;});
-  starPulse+=starDir;
-  if(starPulse>1.25||starPulse<0.85)starDir*=-1;
+  snow.forEach(s=>{
+    s.y += s.s;
+    if(s.y > canvas.height) s.y = -5;
+  });
+  starPulse += starDir;
+  if(starPulse > 1.25 || starPulse < 0.85) starDir *= -1;
 }
+
 function render(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawStar();drawLeaves();drawRibbons();drawBalls();drawSnow();
+  drawStar();
+  drawLeaves();
+  drawRibbons();
+  drawBalls();
+  drawGifts();
+  drawSnow();
 }
+
+/* ===== Draw ===== */
 function drawStar(){
   ctx.save();
-  ctx.translate(CX(),150);
-  ctx.scale(starPulse,starPulse);
-  ctx.fillStyle=COLORS.star;
-  ctx.shadowColor=COLORS.star;
-  ctx.shadowBlur=20;
+  ctx.translate(CX(), 150);
+  ctx.scale(starPulse, starPulse);
+  ctx.fillStyle = COLORS.star;
+  ctx.shadowColor = COLORS.star;
+  ctx.shadowBlur = 20;
   ctx.beginPath();
   for(let i=0;i<5;i++){
-    ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*18,-Math.sin((18+i*72)*Math.PI/180)*18);
-    ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*8,-Math.sin((54+i*72)*Math.PI/180)*8);
+    ctx.lineTo(Math.cos((18+i*72)*Math.PI/180)*18,
+               -Math.sin((18+i*72)*Math.PI/180)*18);
+    ctx.lineTo(Math.cos((54+i*72)*Math.PI/180)*8,
+               -Math.sin((54+i*72)*Math.PI/180)*8);
   }
-  ctx.fill();ctx.restore();
+  ctx.fill();
+  ctx.restore();
 }
+
 function drawLeaves(){
-  [[210,60],[270,70],[340,80]].forEach(l=>{
-    ctx.fillStyle=COLORS.leaf;
+  ctx.fillStyle = COLORS.leaf;
+  leaves.forEach(l=>{
     ctx.beginPath();
-    ctx.moveTo(CX()-l[1]/2,l[0]);
-    ctx.quadraticCurveTo(CX(),l[0]-l[1],CX()+l[1]/2,l[0]);
-    ctx.quadraticCurveTo(CX(),l[0]+l[1]*.7,CX()-l[1]/2,l[0]);
+    ctx.moveTo(CX()-l.w/2, l.y);
+    ctx.quadraticCurveTo(CX(), l.y-l.h, CX()+l.w/2, l.y);
+    ctx.quadraticCurveTo(CX(), l.y+l.h*0.7, CX()-l.w/2, l.y);
     ctx.fill();
   });
 }
+
 function drawRibbons(){
-  ctx.strokeStyle=COLORS.ribbon;ctx.lineWidth=8;
+  ctx.strokeStyle = COLORS.ribbon;
+  ctx.lineWidth = 5;
   ribbons.forEach(r=>{
+    const leaf = leaves[r.leaf];
+    const y = leaf.y + r.offset;
     ctx.beginPath();
-    ctx.moveTo(CX()-160,r.y);
-    ctx.quadraticCurveTo(CX(),r.y-18,CX()+160,r.y);
+    ctx.moveTo(CX()-leaf.w/2+20, y);
+    ctx.quadraticCurveTo(CX(), y-15, CX()+leaf.w/2-20, y);
     ctx.stroke();
   });
 }
+
 function drawBalls(){
-  ctx.fillStyle=COLORS.ball;
+  ctx.fillStyle = COLORS.ball;
   balls.forEach(b=>{
     ctx.beginPath();
-    ctx.arc(CX()+b.x,b.y,8,0,Math.PI*2);
+    ctx.arc(CX()+b.x, b.y, 8, 0, Math.PI*2);
     ctx.fill();
   });
 }
+
+function drawGifts(){
+  gifts.forEach(g=>{
+    ctx.fillStyle = COLORS.gift;
+    ctx.fillRect(CX()+g.x-g.w/2, g.y, g.w, g.h);
+
+    ctx.fillStyle = COLORS.ribbon;
+    ctx.beginPath();
+    ctx.ellipse(CX()+g.x-6, g.y-4, 6, 4, 0, 0, Math.PI*2);
+    ctx.ellipse(CX()+g.x+6, g.y-4, 6, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(CX()+g.x, g.y-4, 3, 0, Math.PI*2);
+    ctx.fill();
+  });
+}
+
 function drawSnow(){
-  ctx.fillStyle="white";
+  ctx.fillStyle = "white";
   snow.forEach(s=>{
     ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
     ctx.fill();
   });
 }
 
-/* 儲存 / 載入 */
-saveBtn.onclick=()=>localStorage.setItem("tree_"+slot.value,history.at(-1));
-loadBtn.onclick=()=>{
-  const d=localStorage.getItem("tree_"+slot.value);
-  if(!d)return alert("沒有存檔");
-  history.length=0;history.push(d);load(d);
-};
-
-/* 啟動 */
-saveHistory();
-(function loop(){update();render();requestAnimationFrame(loop);})();
+/* ===== Loop ===== */
+(function loop(){
+  update();
+  render();
+  requestAnimationFrame(loop);
+})();
 </script>
+
 </body>
 </html>
